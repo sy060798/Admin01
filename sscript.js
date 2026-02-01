@@ -1,5 +1,5 @@
 const fields = [
-    "CRT",
+    "CRT ",
     "SN ONT",
     "MAC",
     "PANJANG KABEL",
