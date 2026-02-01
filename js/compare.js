@@ -1,7 +1,7 @@
 // ===============================
 // CONFIG
 // ===============================
-console.log("sscript.js loaded OK"); // cek di Console
+console.log("compare.js loaded OK");
 
 const KEY_FIELD = "Cust ID Klien";
 
@@ -10,12 +10,12 @@ let dataB = [];
 let resultData = [];
 
 // ===============================
-// NORMALIZE DATA (PENTING)
+// NORMALIZE DATA
 // ===============================
 function normalize(val) {
     return String(val || "")
-        .replace(/\u00A0/g, "") // hapus spasi aneh (non-breaking space)
-        .replace(/[\s\-:]/g, "") // hapus spasi, - dan :
+        .replace(/\u00A0/g, "")
+        .replace(/[\s\-:]/g, "")
         .toUpperCase()
         .trim();
 }
@@ -25,12 +25,10 @@ function normalize(val) {
 // ===============================
 function readExcel(file, callback) {
     const reader = new FileReader();
-    reader.onload = function (e) {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: "array" });
+    reader.onload = e => {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-        callback(rows);
+        callback(XLSX.utils.sheet_to_json(sheet, { defval: "" }));
     };
     reader.readAsArrayBuffer(file);
 }
@@ -39,25 +37,17 @@ function readExcel(file, callback) {
 // LOAD & COMPARE
 // ===============================
 function compareExcel() {
-    const fileAInput = document.getElementById("fileA");
-    const fileBInput = document.getElementById("fileB");
-
-    if (!fileAInput || !fileBInput) {
-        alert("Input file tidak ditemukan");
-        return;
-    }
-
-    const fileA = fileAInput.files[0];
-    const fileB = fileBInput.files[0];
+    const fileA = document.getElementById("fileA").files[0];
+    const fileB = document.getElementById("fileB").files[0];
 
     if (!fileA || !fileB) {
         alert("Upload Excel A & B dulu");
         return;
     }
 
-    readExcel(fileA, function (rowsA) {
+    readExcel(fileA, rowsA => {
         dataA = rowsA;
-        readExcel(fileB, function (rowsB) {
+        readExcel(fileB, rowsB => {
             dataB = rowsB;
             processCompare();
         });
@@ -65,51 +55,37 @@ function compareExcel() {
 }
 
 // ===============================
-// PROSES COMPARE (FINAL FIX)
+// PROSES COMPARE
 // ===============================
 function processCompare() {
     const tbody = document.querySelector("#resultTable tbody");
-    if (!tbody) return;
-
     tbody.innerHTML = "";
     resultData = [];
 
-    dataB.forEach(function (b) {
+    dataB.forEach(b => {
         const match = dataA.find(a =>
             normalize(a[KEY_FIELD]) === normalize(b[KEY_FIELD])
         );
 
-        let status = "";
-        let detail = "";
-        let cls = "";
+        let status, detail, cls;
 
-        let ont = b["ONT"] || "";
-        let macOnt = b["MAC ONT"] || "";
-        let macStb = b["MAC STB"] || "";
+        const ont = b["ONT"] || "";
+        const macOnt = b["MAC ONT"] || "";
+        const macStb = b["MAC STB"] || "";
 
         if (!match) {
             status = "NOT FOUND";
             detail = "Tidak ada di Excel A";
             cls = "notfound";
         } else {
-            const ontMatch =
-                normalize(match["ONT"]) === normalize(b["ONT"]);
+            const ok =
+                normalize(match["ONT"]) === normalize(ont) &&
+                normalize(match["MAC ONT"]) === normalize(macOnt) &&
+                normalize(match["MAC STB"]) === normalize(macStb);
 
-            const macOntMatch =
-                normalize(match["MAC ONT"]) === normalize(b["MAC ONT"]);
-
-            const macStbMatch =
-                normalize(match["MAC STB"]) === normalize(b["MAC STB"]);
-
-            if (ontMatch && macOntMatch && macStbMatch) {
-                status = "MATCH";
-                detail = "Data cocok";
-                cls = "match";
-            } else {
-                status = "FAILED";
-                detail = "Ada data tidak sesuai";
-                cls = "failed";
-            }
+            status = ok ? "MATCH" : "FAILED";
+            detail = ok ? "Data cocok" : "Ada data tidak sesuai";
+            cls = ok ? "match" : "failed";
         }
 
         resultData.push({
@@ -135,11 +111,11 @@ function processCompare() {
 }
 
 // ===============================
-// EXPORT EXCEL
+// EXPORT
 // ===============================
 function exportExcel() {
     if (!resultData.length) {
-        alert("Tidak ada data untuk di-export");
+        alert("Tidak ada data");
         return;
     }
 
@@ -153,7 +129,13 @@ function exportExcel() {
 // CLEAR
 // ===============================
 function clearAll() {
-    const tbody = document.querySelector("#resultTable tbody");
-    if (tbody) tbody.innerHTML = "";
+    document.querySelector("#resultTable tbody").innerHTML = "";
     resultData = [];
 }
+
+// ===============================
+// 🔥 FIX PENTING UNTUK GITHUB
+// ===============================
+window.compareExcel = compareExcel;
+window.exportExcel = exportExcel;
+window.clearAll = clearAll;
