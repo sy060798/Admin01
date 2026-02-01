@@ -1,3 +1,8 @@
+// ===============================
+// CONFIG
+// ===============================
+console.log("sscript.js loaded OK"); // 🔍 buat cek di Console
+
 const KEY_FIELD = "Cust ID Klien";
 
 let dataA = [];
@@ -9,10 +14,12 @@ let resultData = [];
 // ===============================
 function readExcel(file, callback) {
     const reader = new FileReader();
-    reader.onload = e => {
-        const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+    reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: "array" });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        callback(XLSX.utils.sheet_to_json(sheet, { defval: "" }));
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        callback(rows);
     };
     reader.readAsArrayBuffer(file);
 }
@@ -21,17 +28,25 @@ function readExcel(file, callback) {
 // LOAD & COMPARE
 // ===============================
 function compareExcel() {
-    const fileA = document.getElementById("fileA").files[0];
-    const fileB = document.getElementById("fileB").files[0];
+    const fileAInput = document.getElementById("fileA");
+    const fileBInput = document.getElementById("fileB");
+
+    if (!fileAInput || !fileBInput) {
+        alert("Input file tidak ditemukan");
+        return;
+    }
+
+    const fileA = fileAInput.files[0];
+    const fileB = fileBInput.files[0];
 
     if (!fileA || !fileB) {
         alert("Upload Excel A & B dulu");
         return;
     }
 
-    readExcel(fileA, rowsA => {
+    readExcel(fileA, function (rowsA) {
         dataA = rowsA;
-        readExcel(fileB, rowsB => {
+        readExcel(fileB, function (rowsB) {
             dataB = rowsB;
             processCompare();
         });
@@ -43,10 +58,12 @@ function compareExcel() {
 // ===============================
 function processCompare() {
     const tbody = document.querySelector("#resultTable tbody");
+    if (!tbody) return;
+
     tbody.innerHTML = "";
     resultData = [];
 
-    dataB.forEach(b => {
+    dataB.forEach(function (b) {
         const match = dataA.find(a => a[KEY_FIELD] === b[KEY_FIELD]);
 
         let status = "";
@@ -77,11 +94,7 @@ function processCompare() {
                 macStb = b["MAC STB"];
             }
 
-            if (
-                ont &&
-                macOnt &&
-                macStb
-            ) {
+            if (ont && macOnt && macStb) {
                 status = "MATCH";
                 detail = "Data cocok";
                 cls = "match";
@@ -93,7 +106,7 @@ function processCompare() {
         }
 
         resultData.push({
-            [KEY_FIELD]: b[KEY_FIELD],
+            [KEY_FIELD]: b[KEY_FIELD] || "",
             "ONT": ont,
             "MAC ONT": macOnt,
             "MAC STB": macStb,
@@ -101,16 +114,16 @@ function processCompare() {
             "Detail": detail
         });
 
-        tbody.innerHTML += `
+        tbody.insertAdjacentHTML("beforeend", `
             <tr class="${cls}">
-                <td>${b[KEY_FIELD]}</td>
+                <td>${b[KEY_FIELD] || ""}</td>
                 <td>${ont}</td>
                 <td>${macOnt}</td>
                 <td>${macStb}</td>
                 <td>${status}</td>
                 <td>${detail}</td>
             </tr>
-        `;
+        `);
     });
 }
 
@@ -118,6 +131,11 @@ function processCompare() {
 // EXPORT EXCEL
 // ===============================
 function exportExcel() {
+    if (!resultData.length) {
+        alert("Tidak ada data untuk di-export");
+        return;
+    }
+
     const ws = XLSX.utils.json_to_sheet(resultData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Compare Result");
@@ -128,6 +146,7 @@ function exportExcel() {
 // CLEAR
 // ===============================
 function clearAll() {
-    document.querySelector("#resultTable tbody").innerHTML = "";
+    const tbody = document.querySelector("#resultTable tbody");
+    if (tbody) tbody.innerHTML = "";
     resultData = [];
 }
