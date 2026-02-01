@@ -12,33 +12,46 @@ const fields = [
     "Span Problem"
 ];
 
+let cirCounter = 0;
+
 function parseCIR() {
     const text = document.getElementById("cirInput").value;
     const tbody = document.querySelector("#resultTable tbody");
-    tbody.innerHTML = "";
 
-    fields.forEach(field => {
+    if (!text.trim()) return;
+
+    cirCounter++;
+
+    // === HEADER PEMBATAS CIR ===
+    const headerRow = document.createElement("tr");
+    headerRow.innerHTML = `
+        <td colspan="2" style="background:#d9edf7;font-weight:bold;">
+            CIR #${cirCounter}
+        </td>
+    `;
+    tbody.prepend(headerRow);
+
+    // === DATA FIELD ===
+    fields.slice().reverse().forEach(field => {
         const regex = new RegExp(field + "\\s*:\\s*(.*)", "i");
         const match = text.match(regex);
         const value = match ? match[1].trim() : "-";
 
         const row = document.createElement("tr");
-
-        const fieldCell = document.createElement("td");
-        fieldCell.textContent = field;
-
-        const valueCell = document.createElement("td");
-        valueCell.textContent = value;
-
-        row.appendChild(fieldCell);
-        row.appendChild(valueCell);
-        tbody.appendChild(row);
+        row.innerHTML = `
+            <td>${field}</td>
+            <td>${value}</td>
+        `;
+        tbody.prepend(row);
     });
+
+    // optional: clear textarea setelah parse
+    document.getElementById("cirInput").value = "";
 }
 
 function exportExcel() {
     const table = document.getElementById("resultTable");
-    let html = table.outerHTML;
+    const html = table.outerHTML;
 
     const blob = new Blob(
         ['\ufeff' + html],
@@ -49,6 +62,4 @@ function exportExcel() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "CIR_Result.xls";
-    a.click();
-    URL.revokeObjectURL(url);
-}
+    a.clic
