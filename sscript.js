@@ -1,8 +1,7 @@
 const fields = [
     "Root Cause",
     "Action",
-    "Impact Service",
-   
+    "Status"
 ];
 
 let cirCounter = 0;
@@ -15,30 +14,31 @@ function parseCIR() {
 
     cirCounter++;
 
-    // === HEADER PEMBATAS CIR ===
-    const headerRow = document.createElement("tr");
-    headerRow.innerHTML = `
-        <td colspan="2" style="background:#d9edf7;font-weight:bold;">
-            CIR #${cirCounter}
-        </td>
+    let cirHTML = `
+        <tr>
+            <td colspan="2" style="background:#d9edf7;font-weight:bold;">
+                CIR #${cirCounter}
+            </td>
+        </tr>
     `;
-    tbody.prepend(headerRow);
 
-    // === DATA FIELD ===
-    fields.slice().reverse().forEach(field => {
+    fields.forEach(field => {
         const regex = new RegExp(field + "\\s*:\\s*(.*)", "i");
         const match = text.match(regex);
         const value = match ? match[1].trim() : "-";
 
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${field}</td>
-            <td>${value}</td>
+        cirHTML += `
+            <tr>
+                <td>${field}</td>
+                <td>${value}</td>
+            </tr>
         `;
-        tbody.prepend(row);
     });
 
-    // optional: clear textarea setelah parse
+    // 🔥 INSERT DI ATAS, TANPA HAPUS DATA LAMA
+    tbody.insertAdjacentHTML("afterbegin", cirHTML);
+
+    // optional: bersihin textarea
     document.getElementById("cirInput").value = "";
 }
 
@@ -55,4 +55,11 @@ function exportExcel() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "CIR_Result.xls";
-    a.clic
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function clearAll() {
+    document.querySelector("#resultTable tbody").innerHTML = "";
+    cirCounter = 0;
+}
