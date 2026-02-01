@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Compare Excel</title>
+
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<h2>Excel Data Compare</h2>
+
+<a href="../index.html">⬅ Kembali ke Menu</a>
+<br><br>
+
+<input type="file" id="fileA" accept=".xlsx,.xls" hidden>
+<input type="file" id="fileB" accept=".xlsx,.xls" hidden>
+
+<button onclick="document.getElementById('fileA').click()">Load Excel A</button>
+<button onclick="document.getElementById('fileB').click()">Load Excel B</button>
+
+<br><br>
+
+<button onclick="compareExcel()">Compare</button>
+<button onclick="exportExcel()">Export</button>
+<button onclick="clearAll()">Clear</button>
+
+<table id="resultTable">
+<thead>
+<tr>
+    <th>Cust ID Klien</th>
+    <th>ONT</th>
+    <th>MAC ONT</th>
+    <th>MAC STB</th>
+    <th>Status</th>
+    <th>Detail</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="../js/compare.js"></script>
+
+</body>
+</html>
