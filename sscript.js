@@ -10,6 +10,17 @@ let dataB = [];
 let resultData = [];
 
 // ===============================
+// NORMALIZE DATA (PENTING)
+// ===============================
+function normalize(val) {
+    return String(val || "")
+        .replace(/\u00A0/g, "") // hapus spasi aneh (non-breaking space)
+        .replace(/[\s\-:]/g, "") // hapus spasi, - dan :
+        .toUpperCase()
+        .trim();
+}
+
+// ===============================
 // BACA EXCEL
 // ===============================
 function readExcel(file, callback) {
@@ -54,7 +65,7 @@ function compareExcel() {
 }
 
 // ===============================
-// PROSES COMPARE (FIXED)
+// PROSES COMPARE (FINAL FIX)
 // ===============================
 function processCompare() {
     const tbody = document.querySelector("#resultTable tbody");
@@ -64,35 +75,31 @@ function processCompare() {
     resultData = [];
 
     dataB.forEach(function (b) {
-        const match = dataA.find(a => a[KEY_FIELD] === b[KEY_FIELD]);
+        const match = dataA.find(a =>
+            normalize(a[KEY_FIELD]) === normalize(b[KEY_FIELD])
+        );
 
         let status = "";
         let detail = "";
         let cls = "";
 
-        let ont = "";
-        let macOnt = "";
-        let macStb = "";
+        let ont = b["ONT"] || "";
+        let macOnt = b["MAC ONT"] || "";
+        let macStb = b["MAC STB"] || "";
 
         if (!match) {
             status = "NOT FOUND";
             detail = "Tidak ada di Excel A";
             cls = "notfound";
         } else {
-            // ===== LOGIC COMPARE YANG BENAR =====
             const ontMatch =
-                (match["ONT"] || "").trim() === (b["ONT"] || "").trim();
+                normalize(match["ONT"]) === normalize(b["ONT"]);
 
             const macOntMatch =
-                (match["MAC ONT"] || "").trim() === (b["MAC ONT"] || "").trim();
+                normalize(match["MAC ONT"]) === normalize(b["MAC ONT"]);
 
             const macStbMatch =
-                (match["MAC STB"] || "").trim() === (b["MAC STB"] || "").trim();
-
-            // tampilkan data asli Excel B
-            ont = b["ONT"] || "";
-            macOnt = b["MAC ONT"] || "";
-            macStb = b["MAC STB"] || "";
+                normalize(match["MAC STB"]) === normalize(b["MAC STB"]);
 
             if (ontMatch && macOntMatch && macStbMatch) {
                 status = "MATCH";
