@@ -5,6 +5,33 @@
 <title>Compare Excel</title>
 
 <link rel="stylesheet" href="../style.css">
+<style>
+/* optional tambahan supaya tombol dan table tetap rapi */
+button {
+    padding: 8px 14px;
+    margin: 4px;
+    cursor: pointer;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+th {
+    background: #f4f4f4;
+}
+
+.match { background: #d4edda; }
+.failed { background: #f8d7da; }
+.notfound { background: #fff3cd; }
+</style>
 </head>
 <body>
 
@@ -13,9 +40,11 @@
 <a href="../index.html">⬅ Kembali ke Menu</a>
 <br><br>
 
-<input type="file" id="fileA" accept=".xlsx,.xls" hidden>
-<input type="file" id="fileB" accept=".xlsx,.xls" hidden>
+<!-- input file disembunyikan supaya tidak muncul X -->
+<input type="file" id="fileA" accept=".xlsx,.xls" style="display:none">
+<input type="file" id="fileB" accept=".xlsx,.xls" style="display:none">
 
+<!-- tombol virtual untuk load file -->
 <button onclick="document.getElementById('fileA').click()">Load Excel A</button>
 <button onclick="document.getElementById('fileB').click()">Load Excel B</button>
 
@@ -39,7 +68,9 @@
 <tbody></tbody>
 </table>
 
+<!-- XLSX CDN -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<!-- script compare -->
 <script src="../js/compare.js"></script>
 
 </body>
