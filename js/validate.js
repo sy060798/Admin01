@@ -24,10 +24,10 @@ document.getElementById('imageFiles').addEventListener('change', function() {
         reader.readAsDataURL(file);
     });
 
-    this.value = ""; // reset
+    this.value = "";
 });
 
-// clear list
+// clear table & array
 function clearAll() {
     document.querySelector("#imageList tbody").innerHTML = "";
     uploadedFiles = [];
@@ -55,7 +55,7 @@ async function downloadPDF() {
 
     for (let i = 0; i < uploadedFiles.length; i++) {
         const file = uploadedFiles[i];
-        const imgData = await readFileAsDataURL(file); // tunggu gambar selesai
+        const imgData = await readFileAsDataURL(file);
 
         const imgProps = doc.getImageProperties(imgData);
         const pageWidth = doc.internal.pageSize.getWidth() - 20;
