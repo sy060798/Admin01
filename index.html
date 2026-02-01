@@ -6,7 +6,7 @@
     <style>
         body { font-family: Arial; margin: 20px; }
         textarea { width: 100%; height: 260px; }
-        button { margin-top: 10px; padding: 10px 15px; }
+        button { margin-top: 10px; padding: 10px 15px; cursor: pointer; }
         table { border-collapse: collapse; margin-top: 20px; width: 100%; }
         th, td { border: 1px solid #ccc; padding: 8px; }
         th { background: #f4f4f4; text-align: left; }
@@ -31,55 +31,6 @@
     <tbody></tbody>
 </table>
 
-<script>
-const fields = [
-    "Root Cause",
-    "Action",
-    "Impact Service",
-    "Down Time",
-    "Clear Time",
-    "Duration",
-    "Status",
-    "Vendor",
-    "Problem Location"
-];
-
-function parseCIR() {
-    const text = document.getElementById("cirInput").value;
-    const tbody = document.querySelector("#resultTable tbody");
-    tbody.innerHTML = "";
-
-    fields.forEach(field => {
-        const regex = new RegExp(field + "\\s*:\\s*(.*)", "i");
-        const match = text.match(regex);
-
-        const value = match ? match[1].trim() : "";
-
-        const row = `<tr>
-            <td>${field}</td>
-            <td>${value}</td>
-        </tr>`;
-        tbody.insertAdjacentHTML("beforeend", row);
-    });
-}
-
-function exportExcel() {
-    let table = document.getElementById("resultTable");
-    let html = table.outerHTML;
-
-    let blob = new Blob(
-        ['\ufeff' + html],
-        { type: 'application/vnd.ms-excel' }
-    );
-
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement("a");
-    a.href = url;
-    a.download = "CIR_Result.xls";
-    a.click();
-    URL.revokeObjectURL(url);
-}
-</script>
-
+<script src="sscript.js"></script>
 </body>
 </html>
