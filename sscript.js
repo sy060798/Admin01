@@ -12,7 +12,7 @@ const fields = [
 
 let cirCounter = 0;
 
-// 🔹 normalisasi text (biar header Excel fleksibel)
+// ================== UTIL ==================
 function normalize(text) {
     return String(text || "")
         .trim()
@@ -20,42 +20,52 @@ function normalize(text) {
         .replace(/\s+/g, " ");
 }
 
-// 🔥 BUKA FILE EXPLORER
+// ================== FILE UPLOAD ==================
 function openFileDialog() {
     document.getElementById("excelFile").click();
 }
 
-// 📥 LOAD EXCEL SETELAH DIPILIH
 function loadExcel() {
     const input = document.getElementById("excelFile");
     if (!input.files.length) return;
 
-    const file = input.files[0];
     const reader = new FileReader();
-
     reader.onload = function (e) {
         const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const wb = XLSX.read(data, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
         rows.forEach(row => addCIR(row));
     };
 
-    reader.readAsArrayBuffer(file);
-
-    // reset supaya bisa upload file yg sama lagi
+    reader.readAsArrayBuffer(input.files[0]);
     input.value = "";
 }
 
+// ================== MANUAL PARSE ==================
+function parseCIR() {
+    const text = document.getElementById("cirInput").value;
+    if (!text.trim()) return;
+
+    const row = {};
+    fields.forEach(field => {
+        const match = text.match(new RegExp(field + "\\s*:\\s*(.*)", "i"));
+        row[field] = match ? match[1].trim() : "";
+    });
+
+    addCIR(row);
+    document.getElementById("cirInput").value = "";
+}
+
+// ================== RENDER ==================
 function addCIR(row) {
     const tbody = document.querySelector("#resultTable tbody");
     cirCounter++;
 
-    // buat map header excel
     const normalizedRow = {};
-    Object.keys(row).forEach(key => {
-        normalizedRow[normalize(key)] = row[key];
+    Object.keys(row).forEach(k => {
+        normalizedRow[normalize(k)] = row[k];
     });
 
     let html = `
@@ -68,8 +78,7 @@ function addCIR(row) {
 
     fields.forEach(field => {
         const value =
-            normalizedRow[normalize(field)] !== undefined &&
-            normalizedRow[normalize(field)] !== ""
+            normalizedRow[normalize(field)]
                 ? normalizedRow[normalize(field)]
                 : `<span style="color:#999">-</span>`;
 
@@ -84,7 +93,22 @@ function addCIR(row) {
     tbody.insertAdjacentHTML("afterbegin", html);
 }
 
-// 🧹 CLEAR SEMUA DATA
+// ================== EXPORT ==================
+function exportExcel() {
+    const table = document.getElementById("resultTable");
+    const blob = new Blob(
+        ['\ufeff' + table.outerHTML],
+        { type: 'application/vnd.ms-excel' }
+    );
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "CIR_Result.xls";
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+// ================== CLEAR ==================
 function clearAll() {
     document.querySelector("#resultTable tbody").innerHTML = "";
     cirCounter = 0;
