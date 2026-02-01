@@ -2,58 +2,20 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Excel Data Compare</title>
-
-<!-- OPTIONAL: kalau nanti pakai css terpisah -->
-<!-- <link rel="stylesheet" href="css/style.css"> -->
-
-<style>
-    body { font-family: Arial; margin:20px; }
-    button { padding:10px 15px; margin:5px; cursor:pointer; }
-    table { width:100%; border-collapse:collapse; margin-top:20px; }
-    th, td { border:1px solid #ccc; padding:8px; }
-    th { background:#f4f4f4; }
-    .match { background:#d4edda; }
-    .failed { background:#f8d7da; }
-    .notfound { background:#fff3cd; }
-</style>
+<title>Admin Tools</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>Excel Data Compare</h2>
+<h2>Admin Operational Tools</h2>
 
-<!-- INPUT FILE (DISEMBUNYIKAN) -->
-<input type="file" id="fileA" accept=".xlsx,.xls" hidden>
-<input type="file" id="fileB" accept=".xlsx,.xls" hidden>
-
-<!-- TOMBOL -->
-<button type="button" onclick="document.getElementById('fileA').click()">Load Excel A</button>
-<button type="button" onclick="document.getElementById('fileB').click()">Load Excel B</button>
-
-<br><br>
-<button type="button" onclick="compareExcel()">Compare</button>
-<button type="button" onclick="exportExcel()">Export Result</button>
-<button type="button" onclick="clearAll()">Clear</button>
-
-<table id="resultTable">
-<thead>
-<tr>
-    <th>Cust ID Klien</th>
-    <th>ONT</th>
-    <th>MAC ONT</th>
-    <th>MAC STB</th>
-    <th>Status</th>
-    <th>Detail</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
-<!-- XLSX HARUS PALING ATAS -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-<!-- JS UTAMA -->
-<script src="js/compare.js"></script>
+<div class="menu">
+    <a href="menu/compare.html">📊 Compare Excel</a>
+    <a href="menu/CIRBACKBONE.html">🌐 CIR Backbone</a>
+    <a href="menu/TREKING.html">📍 Treking</a>
+    <a href="menu/report.html">📄 Report</a>
+    <a href="menu/validate.html">✅ Validate</a>
+</div>
 
 </body>
 </html>
