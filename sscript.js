@@ -1,18 +1,12 @@
+const KEY_FIELD = "Cust ID Klien";
+
 let dataA = [];
 let dataB = [];
 let resultData = [];
 
-// ====== SETTING DATA KOMPER (TINGGAL EDIT DI SINI) ======
-const KEY_FIELD = "Cust ID Klien";   // kolom kunci utama (ID unik)
-
-const COMPARE_FIELDS = [
-    "Customer Name",
-    "Status",
-    "ONT",
-    "MAC ONT"
-];
-// =======================================================
-
+// ===============================
+// BACA EXCEL
+// ===============================
 function readExcel(file, callback) {
     const reader = new FileReader();
     reader.onload = e => {
@@ -23,9 +17,13 @@ function readExcel(file, callback) {
     reader.readAsArrayBuffer(file);
 }
 
+// ===============================
+// LOAD & COMPARE
+// ===============================
 function compareExcel() {
     const fileA = document.getElementById("fileA").files[0];
     const fileB = document.getElementById("fileB").files[0];
+
     if (!fileA || !fileB) {
         alert("Upload Excel A & B dulu");
         return;
@@ -40,6 +38,9 @@ function compareExcel() {
     });
 }
 
+// ===============================
+// PROSES COMPARE
+// ===============================
 function processCompare() {
     const tbody = document.querySelector("#resultTable tbody");
     tbody.innerHTML = "";
@@ -49,44 +50,63 @@ function processCompare() {
         const match = dataA.find(a => a[KEY_FIELD] === b[KEY_FIELD]);
 
         let status = "";
-        let detailArr = [];
+        let detail = "";
         let cls = "";
+
+        let ont = "";
+        let macOnt = "";
+        let macStb = "";
 
         if (!match) {
             status = "NOT FOUND";
-            detailArr.push("Tidak ada di Excel A");
+            detail = "Tidak ada di Excel A";
             cls = "notfound";
         } else {
-            COMPARE_FIELDS.forEach(field => {
-                if ((match[field] || "") !== (b[field] || "")) {
-                    detailArr.push(`${field} tidak sama`);
-                }
-            });
+            // ONT
+            if ((match["ONT"] || "").trim() === (b["ONT"] || "").trim()) {
+                ont = b["ONT"];
+            }
 
-            if (detailArr.length === 0) {
+            // MAC ONT
+            if ((match["MAC ONT"] || "").trim() === (b["MAC ONT"] || "").trim()) {
+                macOnt = b["MAC ONT"];
+            }
+
+            // MAC STB
+            if ((match["MAC STB"] || "").trim() === (b["MAC STB"] || "").trim()) {
+                macStb = b["MAC STB"];
+            }
+
+            if (
+                ont &&
+                macOnt &&
+                macStb
+            ) {
                 status = "MATCH";
-                detailArr.push("Semua data cocok");
+                detail = "Data cocok";
                 cls = "match";
             } else {
                 status = "FAILED";
+                detail = "Ada data tidak sesuai";
                 cls = "failed";
             }
         }
 
-        const detail = detailArr.join(" | ");
-
         resultData.push({
-    [KEY_FIELD]: b[KEY_FIELD],
-    "ONT": b["ONT"] || "",
-    "MAC ONT": b["MAC ONT"] || "",
-    "MAC STB": b["MAC STB"] || "",
-    "Status Compare": status,
-    "Detail": detail
-});
+            [KEY_FIELD]: b[KEY_FIELD],
+            "ONT": ont,
+            "MAC ONT": macOnt,
+            "MAC STB": macStb,
+            "Status": status,
+            "Detail": detail
+        });
 
         tbody.innerHTML += `
             <tr class="${cls}">
                 <td>${b[KEY_FIELD]}</td>
+                <td>${ont}</td>
+                <td>${macOnt}</td>
+                <td>${macStb}</td>
                 <td>${status}</td>
                 <td>${detail}</td>
             </tr>
@@ -94,13 +114,19 @@ function processCompare() {
     });
 }
 
+// ===============================
+// EXPORT EXCEL
+// ===============================
 function exportExcel() {
     const ws = XLSX.utils.json_to_sheet(resultData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Compare Result");
-    XLSX.writeFile(wb, "hasil_komper.xlsx");
+    XLSX.writeFile(wb, "hasil_compare.xlsx");
 }
 
+// ===============================
+// CLEAR
+// ===============================
 function clearAll() {
     document.querySelector("#resultTable tbody").innerHTML = "";
     resultData = [];
