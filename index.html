@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <title>Excel Data Compare</title>
 
+<!-- OPTIONAL: kalau nanti pakai css terpisah -->
+<!-- <link rel="stylesheet" href="css/style.css"> -->
+
 <style>
     body { font-family: Arial; margin:20px; }
     button { padding:10px 15px; margin:5px; cursor:pointer; }
@@ -19,18 +22,18 @@
 
 <h2>Excel Data Compare</h2>
 
-<!-- INPUT FILE DISEMBUNYIKAN (BIAR TIDAK ADA X DI GITHUB) -->
-<input type="file" id="fileA" accept=".xlsx,.xls" style="display:none">
-<input type="file" id="fileB" accept=".xlsx,.xls" style="display:none">
+<!-- INPUT FILE (DISEMBUNYIKAN) -->
+<input type="file" id="fileA" accept=".xlsx,.xls" hidden>
+<input type="file" id="fileB" accept=".xlsx,.xls" hidden>
 
 <!-- TOMBOL -->
-<button onclick="document.getElementById('fileA').click()">Load Excel A</button>
-<button onclick="document.getElementById('fileB').click()">Load Excel B</button>
+<button type="button" onclick="document.getElementById('fileA').click()">Load Excel A</button>
+<button type="button" onclick="document.getElementById('fileB').click()">Load Excel B</button>
 
-<br>
-<button onclick="compareExcel()">Compare</button>
-<button onclick="exportExcel()">Export Result</button>
-<button onclick="clearAll()">Clear</button>
+<br><br>
+<button type="button" onclick="compareExcel()">Compare</button>
+<button type="button" onclick="exportExcel()">Export Result</button>
+<button type="button" onclick="clearAll()">Clear</button>
 
 <table id="resultTable">
 <thead>
@@ -46,7 +49,11 @@
 <tbody></tbody>
 </table>
 
+<!-- XLSX HARUS PALING ATAS -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<!-- JS UTAMA -->
 <script src="js/compare.js"></script>
+
 </body>
 </html>
