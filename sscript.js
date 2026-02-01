@@ -1,22 +1,29 @@
-const fields = [
-    "CRT:",
-    "SN ONT",
-    "MAC",
-    "PANJANG KABEL",
-    "Status"
-];
-
+const fields = ["Cust ID Klien", "Customer Name", "ONT", "MAC ONT", "Kabel Precon 100 Old", "Kabel Precon 150 Old", "Kabel Precon 200 Old", "Detail Pekerjaan", "Status"];
 let cirCounter = 0;
 
-function parseCIR() {
-    const text = document.getElementById("cirInput").value;
+// === LOAD EXCEL ===
+function loadExcel() {
+    const fileInput = document.getElementById("excelFile");
+    if (!fileInput.files.length) return alert("Upload file Excel dulu");
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        json.forEach(row => addCIRFromExcel(row));
+    };
+    reader.readAsArrayBuffer(fileInput.files[0]);
+}
+
+// === TAMBAH 1 CIR ===
+function addCIRFromExcel(row) {
     const tbody = document.querySelector("#resultTable tbody");
-
-    if (!text.trim()) return;
-
     cirCounter++;
 
-    let cirHTML = `
+    let html = `
         <tr>
             <td colspan="2" style="background:#d9edf7;font-weight:bold;">
                 CIR #${cirCounter}
@@ -25,42 +32,33 @@ function parseCIR() {
     `;
 
     fields.forEach(field => {
-        const regex = new RegExp(field + "\\s*:\\s*(.*)", "i");
-        const match = text.match(regex);
-        const value = match ? match[1].trim() : "-";
-
-        cirHTML += `
+        html += `
             <tr>
                 <td>${field}</td>
-                <td>${value}</td>
+                <td>${row[field] || "-"}</td>
             </tr>
         `;
     });
 
-    // 🔥 INSERT DI ATAS, TANPA HAPUS DATA LAMA
-    tbody.insertAdjacentHTML("afterbegin", cirHTML);
+    tbody.insertAdjacentHTML("afterbegin", html);
+}
 
-    // optional: bersihin textarea
+// === MANUAL PARSE (TEXTAREA) ===
+function parseCIR() {
+    const text = document.getElementById("cirInput").value;
+    if (!text.trim()) return;
+
+    let row = {};
+    fields.forEach(f => {
+        const match = text.match(new RegExp(f + "\\s*:\\s*(.*)", "i"));
+        row[f] = match ? match[1].trim() : "-";
+    });
+
+    addCIRFromExcel(row);
     document.getElementById("cirInput").value = "";
 }
 
-function exportExcel() {
-    const table = document.getElementById("resultTable");
-    const html = table.outerHTML;
-
-    const blob = new Blob(
-        ['\ufeff' + html],
-        { type: 'application/vnd.ms-excel' }
-    );
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "CIR_Result.xls";
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
+// === CLEAR ===
 function clearAll() {
     document.querySelector("#resultTable tbody").innerHTML = "";
     cirCounter = 0;
