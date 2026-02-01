@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Excel Data Komper</title>
+<title>Excel Data Compare</title>
+
 <style>
     body { font-family: Arial; margin:20px; }
     button { padding:10px 15px; margin:5px; cursor:pointer; }
@@ -18,11 +19,11 @@
 
 <h2>Excel Data Compare</h2>
 
-<!-- INPUT FILE DISEMBUNYIKAN (BIAR TIDAK ADA X) -->
+<!-- INPUT FILE DISEMBUNYIKAN (BIAR TIDAK ADA X DI GITHUB) -->
 <input type="file" id="fileA" accept=".xlsx,.xls" style="display:none">
 <input type="file" id="fileB" accept=".xlsx,.xls" style="display:none">
 
-<!-- TOMBOL PENGGANTI -->
+<!-- TOMBOL -->
 <button onclick="document.getElementById('fileA').click()">Load Excel A</button>
 <button onclick="document.getElementById('fileB').click()">Load Excel B</button>
 
@@ -38,7 +39,7 @@
     <th>ONT</th>
     <th>MAC ONT</th>
     <th>MAC STB</th>
-    <th>Status Compare</th>
+    <th>Status</th>
     <th>Detail</th>
 </tr>
 </thead>
