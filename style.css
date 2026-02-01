@@ -1,0 +1,44 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+.menu a {
+    display: block;
+    width: 220px;
+    padding: 12px;
+    margin: 8px 0;
+    background: #007bff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+.menu a:hover {
+    background: #0056b3;
+}
+
+button {
+    padding: 8px 14px;
+    margin: 4px;
+    cursor: pointer;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+th {
+    background: #f4f4f4;
+}
+
+.match { background: #d4edda; }
+.failed { background: #f8d7da; }
+.notfound { background: #fff3cd; }
