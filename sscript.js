@@ -1,115 +1,84 @@
-const fields = [
-    "Cust ID Klien",
-    "Customer Name",
-    "ONT",
-    "MAC ONT",
-    "Kabel Precon 100 Old",
-    "Kabel Precon 150 Old",
-    "Kabel Precon 200 Old",
-    "Detail Pekerjaan",
-    "Status"
-];
+let dataA = [];
+let dataB = [];
+let resultData = [];
 
-let cirCounter = 0;
-
-// ================== UTIL ==================
-function normalize(text) {
-    return String(text || "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, " ");
-}
-
-// ================== FILE UPLOAD ==================
-function openFileDialog() {
-    document.getElementById("excelFile").click();
-}
-
-function loadExcel() {
-    const input = document.getElementById("excelFile");
-    if (!input.files.length) return;
-
+function readExcel(file, callback) {
     const reader = new FileReader();
-    reader.onload = function (e) {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: "array" });
+    reader.onload = e => {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-        rows.forEach(row => addCIR(row));
+        callback(XLSX.utils.sheet_to_json(sheet, { defval: "" }));
     };
-
-    reader.readAsArrayBuffer(input.files[0]);
-    input.value = "";
+    reader.readAsArrayBuffer(file);
 }
 
-// ================== MANUAL PARSE ==================
-function parseCIR() {
-    const text = document.getElementById("cirInput").value;
-    if (!text.trim()) return;
+function compareExcel() {
+    const fileA = document.getElementById("fileA").files[0];
+    const fileB = document.getElementById("fileB").files[0];
+    if (!fileA || !fileB) {
+        alert("Upload Excel A & B dulu");
+        return;
+    }
 
-    const row = {};
-    fields.forEach(field => {
-        const match = text.match(new RegExp(field + "\\s*:\\s*(.*)", "i"));
-        row[field] = match ? match[1].trim() : "";
+    readExcel(fileA, rowsA => {
+        dataA = rowsA;
+        readExcel(fileB, rowsB => {
+            dataB = rowsB;
+            processCompare();
+        });
     });
-
-    addCIR(row);
-    document.getElementById("cirInput").value = "";
 }
 
-// ================== RENDER ==================
-function addCIR(row) {
+function processCompare() {
     const tbody = document.querySelector("#resultTable tbody");
-    cirCounter++;
+    tbody.innerHTML = "";
+    resultData = [];
 
-    const normalizedRow = {};
-    Object.keys(row).forEach(k => {
-        normalizedRow[normalize(k)] = row[k];
-    });
+    dataB.forEach(b => {
+        const match = dataA.find(a => a["Cust ID Klien"] === b["Cust ID Klien"]);
 
-    let html = `
-        <tr>
-            <td colspan="2" style="background:#d9edf7;font-weight:bold;">
-                CIR #${cirCounter}
-            </td>
-        </tr>
-    `;
+        let status = "";
+        let detail = "";
+        let cls = "";
 
-    fields.forEach(field => {
-        const value =
-            normalizedRow[normalize(field)]
-                ? normalizedRow[normalize(field)]
-                : `<span style="color:#999">-</span>`;
+        if (!match) {
+            status = "NOT FOUND";
+            detail = "Tidak ada di Excel A";
+            cls = "notfound";
+        } else if (JSON.stringify(match) === JSON.stringify(b)) {
+            status = "MATCH";
+            detail = "Data cocok";
+            cls = "match";
+        } else {
+            status = "FAILED";
+            detail = "Data tidak sesuai";
+            cls = "failed";
+        }
 
-        html += `
-            <tr>
-                <td>${field}</td>
-                <td>${value}</td>
+        resultData.push({
+            "Cust ID Klien": b["Cust ID Klien"],
+            "Status Compare": status,
+            "Detail": detail
+        });
+
+        tbody.innerHTML += `
+            <tr class="${cls}">
+                <td>${b["Cust ID Klien"]}</td>
+                <td>${status}</td>
+                <td>${detail}</td>
             </tr>
         `;
     });
-
-    tbody.insertAdjacentHTML("afterbegin", html);
 }
 
-// ================== EXPORT ==================
 function exportExcel() {
-    const table = document.getElementById("resultTable");
-    const blob = new Blob(
-        ['\ufeff' + table.outerHTML],
-        { type: 'application/vnd.ms-excel' }
-    );
-
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "CIR_Result.xls";
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const ws = XLSX.utils.json_to_sheet(resultData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Compare Result");
+    XLSX.writeFile(wb, "hasil_komper.xlsx");
 }
 
-// ================== CLEAR ==================
 function clearAll() {
     document.querySelector("#resultTable tbody").innerHTML = "";
-    cirCounter = 0;
+    resultData = [];
 }
