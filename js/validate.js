@@ -1,17 +1,21 @@
 // ===============================
-// VALIDATE.JS – QUALITY IMAGE
+// Validate.js
 // ===============================
 console.log("validate.js loaded OK");
 
 let imageFiles = [];
 
 // ===============================
-// HANDLE FILE UPLOAD
+// UPLOAD & RENAME
 // ===============================
 document.getElementById("imageFiles").addEventListener("change", function(e){
     const files = Array.from(e.target.files);
-    files.forEach(file => {
-        imageFiles.push(file);
+    files.forEach((file, index) => {
+        const newName = `Zahra_${imageFiles.length + 1}${file.name.slice(file.name.lastIndexOf('.'))}`;
+        imageFiles.push({
+            file: file,
+            name: newName
+        });
     });
     renderList();
 });
@@ -19,71 +23,61 @@ document.getElementById("imageFiles").addEventListener("change", function(e){
 // ===============================
 // RENDER LIST MENURUN
 // ===============================
-function renderList() {
+function renderList(){
     const tbody = document.querySelector("#imageList tbody");
     tbody.innerHTML = "";
-    imageFiles.forEach((file, index) => {
+    imageFiles.forEach((item, index) => {
         const reader = new FileReader();
         reader.onload = function(e){
             tbody.insertAdjacentHTML("beforeend", `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${file.name}</td>
-                    <td><img src="${e.target.result}" alt="${file.name}" style="max-width:150px; max-height:150px; object-fit:contain; border:1px solid #ccc; padding:2px;"></td>
+                    <td>${item.name}</td>
+                    <td><img src="${e.target.result}" alt="${item.name}"></td>
                 </tr>
             `);
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(item.file);
     });
 }
 
 // ===============================
-// GENERATE PDF – HIGH QUALITY
+// GENERATE PDF
 // ===============================
-function generatePDF() {
-    if(!imageFiles.length){
-        alert("Upload gambar dulu!");
-        return;
-    }
-
+function generatePDF(){
+    if(!imageFiles.length){ alert("Upload gambar dulu!"); return; }
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({
-        orientation: 'portrait', // bisa diganti 'landscape' jika perlu
-        unit: 'mm',
-        format: 'a4'
-    });
+    const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
 
-    function addImageToPDF(index){
-        if(index >= imageFiles.length){
+    function addImageToPDF(i){
+        if(i >= imageFiles.length){
             pdf.save("images.pdf");
             return;
         }
-
         const reader = new FileReader();
         reader.onload = function(e){
             const imgData = e.target.result;
             const img = new Image();
             img.src = imgData;
             img.onload = function(){
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-
-                // Hitung rasio asli gambar
-                let ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height) * 0.95; // 95% supaya ada margin
+                const pdfW = pdf.internal.pageSize.getWidth();
+                const pdfH = pdf.internal.pageSize.getHeight();
+                let ratio = Math.min(pdfW/img.width, pdfH/img.height) * 0.9;
                 let width = img.width * ratio;
                 let height = img.height * ratio;
+                let x = (pdfW - width)/2;
+                let y = (pdfH - height)/2 + 10; // beri jarak nama
 
-                // Centering
-                let x = (pdfWidth - width)/2;
-                let y = (pdfHeight - height)/2;
+                pdf.setFontSize(12);
+                pdf.text(imageFiles[i].name, pdfW/2, 10, {align:'center'});
 
-                pdf.addImage(img, 'JPEG', x, y, width, height);
+                pdf.addImage(img,'JPEG',x,y,width,height);
 
-                if(index < imageFiles.length -1) pdf.addPage();
-                addImageToPDF(index + 1);
+                if(i < imageFiles.length -1) pdf.addPage();
+                addImageToPDF(i+1);
             }
         };
-        reader.readAsDataURL(imageFiles[index]);
+        reader.readAsDataURL(imageFiles[i].file);
     }
 
     addImageToPDF(0);
@@ -93,7 +87,7 @@ function generatePDF() {
 // CLEAR ALL
 // ===============================
 function clearAll(){
+    const tbody = document.querySelector("#imageList tbody");
+    if(tbody) tbody.innerHTML = "";
     imageFiles = [];
-    document.querySelector("#imageList tbody").innerHTML = "";
-    document.getElementById("imageFiles").value = "";
 }
