@@ -2,14 +2,7 @@ const fields = [
     "Root Cause",
     "Action",
     "Impact Service",
-    "Down Time",
-    "Clear Time",
-    "Duration",
-    "Status",
-    "Vendor",
-    "Problem Location",
-    "Area",
-    "Span Problem"
+   
 ];
 
 let cirCounter = 0;
