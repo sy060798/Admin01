@@ -2,28 +2,28 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Validate Images to PDF</title>
+<title>Validate Images</title>
 <link rel="stylesheet" href="../style.css">
 <style>
-body { font-family: Arial; margin:20px; }
-button { padding:8px 14px; margin:5px; cursor:pointer; }
-table { width:100%; border-collapse:collapse; margin-top:20px; }
-th, td { border:1px solid #ccc; padding:8px; }
-th { background:#f4f4f4; }
-img { max-width:100px; }
+    body { font-family: Arial; margin:20px; }
+    button { padding:10px 15px; margin:5px; cursor:pointer; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { border:1px solid #ccc; padding:8px; text-align:center; }
+    th { background:#f4f4f4; }
+    img { max-width:150px; max-height:150px; object-fit:contain; }
 </style>
 </head>
 <body>
 
-<h2>Validate Images → PDF</h2>
+<h2>Validate Images</h2>
 <a href="../index.html">⬅ Kembali ke Menu</a>
 <br><br>
 
-<!-- Upload banyak gambar -->
-<input type="file" id="imageFiles" multiple accept="image/*" style="display:none">
+<input type="file" id="imageFiles" accept="image/*" multiple hidden>
+
 <button onclick="document.getElementById('imageFiles').click()">Upload Images</button>
 <button onclick="generatePDF()">Download PDF</button>
-<button onclick="clearAll()">Clear</button>
+<button onclick="clearAll()">Clear All</button>
 
 <table id="imageList">
 <thead>
@@ -36,7 +36,6 @@ img { max-width:100px; }
 <tbody></tbody>
 </table>
 
-<!-- jsPDF CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="../js/validate.js"></script>
 
