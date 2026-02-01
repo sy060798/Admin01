@@ -5,7 +5,8 @@
 <title>Validate Images</title>
 <link rel="stylesheet" href="../style.css">
 <style>
-    body { font-family: Arial; margin:20px; }
+    body { font-family: Arial, sans-serif; margin:20px; }
+    h2 { margin-bottom: 10px; }
     button { padding:10px 15px; margin:5px; cursor:pointer; }
     table { width:100%; border-collapse:collapse; margin-top:20px; }
     th, td { border:1px solid #ccc; padding:8px; text-align:center; }
@@ -19,12 +20,15 @@
 <a href="../index.html">⬅ Kembali ke Menu</a>
 <br><br>
 
+<!-- INPUT FILE TERSEMBUNYI -->
 <input type="file" id="imageFiles" accept="image/*" multiple hidden>
 
+<!-- TOMBOL -->
 <button type="button" onclick="document.getElementById('imageFiles').click()">Upload Images</button>
 <button type="button" onclick="downloadPDF()">Download PDF</button>
 <button type="button" onclick="clearAll()">Clear All</button>
 
+<!-- TABEL PREVIEW -->
 <table id="imageList">
 <thead>
 <tr>
@@ -36,9 +40,9 @@
 <tbody></tbody>
 </table>
 
-<!-- jsPDF -->
+<!-- LIBRARY jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<!-- validate.js -->
+<!-- SCRIPT JS VALIDATE -->
 <script src="../js/validate.js"></script>
 
 </body>
