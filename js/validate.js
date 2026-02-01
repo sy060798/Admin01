@@ -1,50 +1,40 @@
 // ===============================
-// VALIDATE.JS REVISI
+// validate.js
 // ===============================
-console.log("validate.js loaded");
-
-// array untuk simpan file asli
 let uploadedFiles = [];
 
 // ======= HANDLE UPLOAD =======
-function handleFiles(input) {
-    const files = input.files;
+document.getElementById('imageFiles').addEventListener('change', function() {
+    const files = this.files;
     const tbody = document.querySelector("#imageList tbody");
 
     Array.from(files).forEach((file) => {
-        // simpan file asli di array
         uploadedFiles.push(file);
 
         const reader = new FileReader();
         reader.onload = e => {
-            // tampilkan di tabel
             tbody.insertAdjacentHTML("beforeend", `
                 <tr>
                     <td>${tbody.children.length + 1}</td>
-                    <td>${file.name}</td> <!-- pakai nama asli file -->
-                    <td>
-                        <img src="${e.target.result}" 
-                             alt="${file.name}" 
-                             style="max-width:200px; max-height:150px; object-fit:contain;"/>
-                    </td>
+                    <td>${file.name}</td>
+                    <td><img src="${e.target.result}" alt="${file.name}"></td>
                 </tr>
             `);
         };
         reader.readAsDataURL(file);
     });
 
-    // reset input supaya bisa upload file sama lagi
-    input.value = "";
-}
+    this.value = ""; // reset supaya bisa upload file sama lagi
+});
 
-// ======= CLEAR LIST =======
-function clearList() {
+// ======= CLEAR =======
+function clearAll() {
     document.querySelector("#imageList tbody").innerHTML = "";
     uploadedFiles = [];
 }
 
 // ======= DOWNLOAD PDF =======
-function downloadPDF() {
+async function downloadPDF() {
     if (uploadedFiles.length === 0) {
         alert("Tidak ada gambar untuk di-download");
         return;
@@ -53,27 +43,37 @@ function downloadPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // loop untuk setiap file
-    uploadedFiles.forEach((file, idx) => {
+    for (let idx = 0; idx < uploadedFiles.length; idx++) {
+        const file = uploadedFiles[idx];
+        const imgData = await readFileAsDataURL(file);
+
+        const imgProps = doc.getImageProperties(imgData);
+        const pageWidth = doc.internal.pageSize.getWidth() - 20; // margin
+        const pageHeight = doc.internal.pageSize.getHeight() - 30; // margin bawah untuk teks
+
+        // hitung proporsi supaya gambar tidak pecah
+        let pdfWidth = pageWidth;
+        let pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        if (pdfHeight > pageHeight) {
+            pdfHeight = pageHeight;
+            pdfWidth = (imgProps.width * pdfHeight) / imgProps.height;
+        }
+
+        if (idx > 0) doc.addPage();
+        doc.setFontSize(12);
+        doc.text(file.name, 10, 10); // nama asli file
+        doc.addImage(imgData, 'JPEG', 10, 20, pdfWidth, pdfHeight);
+    }
+
+    doc.save("uploaded_images.pdf");
+}
+
+// helper untuk baca file jadi DataURL
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = e => {
-            const imgData = e.target.result;
-
-            const imgProps = doc.getImageProperties(imgData);
-            const pdfWidth = doc.internal.pageSize.getWidth() - 20; // margin 10
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-            if (idx > 0) doc.addPage();
-            // tulis nama asli file di atas gambar
-            doc.setFontSize(12);
-            doc.text(file.name, 10, 10);
-            doc.addImage(imgData, 'JPEG', 10, 20, pdfWidth, pdfHeight);
-
-            // simpan PDF kalau file terakhir
-            if (idx === uploadedFiles.length - 1) {
-                doc.save("uploaded_images.pdf");
-            }
-        };
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = e => reject(e);
         reader.readAsDataURL(file);
     });
 }
