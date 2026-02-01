@@ -1,93 +1,70 @@
 // ===============================
-// Validate.js
+// VALIDATE.JS
 // ===============================
-console.log("validate.js loaded OK");
+console.log("validate.js loaded");
 
-let imageFiles = [];
+// array untuk simpan file
+let uploadedFiles = [];
 
-// ===============================
-// UPLOAD & RENAME
-// ===============================
-document.getElementById("imageFiles").addEventListener("change", function(e){
-    const files = Array.from(e.target.files);
-    files.forEach((file, index) => {
-        const newName = `Zahra_${imageFiles.length + 1}${file.name.slice(file.name.lastIndexOf('.'))}`;
-        imageFiles.push({
-            file: file,
-            name: newName
-        });
-    });
-    renderList();
-});
-
-// ===============================
-// RENDER LIST MENURUN
-// ===============================
-function renderList(){
+// ======= HANDLE UPLOAD =======
+function handleFiles(input) {
+    const files = input.files;
     const tbody = document.querySelector("#imageList tbody");
-    tbody.innerHTML = "";
-    imageFiles.forEach((item, index) => {
+
+    Array.from(files).forEach((file, index) => {
+        // simpan file di array
+        uploadedFiles.push(file);
+
         const reader = new FileReader();
-        reader.onload = function(e){
+        reader.onload = e => {
             tbody.insertAdjacentHTML("beforeend", `
                 <tr>
-                    <td>${index + 1}</td>
-                    <td>${item.name}</td>
-                    <td><img src="${e.target.result}" alt="${item.name}"></td>
+                    <td>${tbody.children.length + 1}</td>
+                    <td>${file.name}</td>
+                    <td><img src="${e.target.result}" alt="${file.name}" style="max-width:200px; max-height:150px; object-fit:contain;"/></td>
                 </tr>
             `);
         };
-        reader.readAsDataURL(item.file);
+        reader.readAsDataURL(file);
     });
+
+    // reset supaya bisa upload file sama lagi
+    input.value = "";
 }
 
-// ===============================
-// GENERATE PDF
-// ===============================
-function generatePDF(){
-    if(!imageFiles.length){ alert("Upload gambar dulu!"); return; }
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+// ======= CLEAR LIST =======
+function clearList() {
+    document.querySelector("#imageList tbody").innerHTML = "";
+    uploadedFiles = [];
+}
 
-    function addImageToPDF(i){
-        if(i >= imageFiles.length){
-            pdf.save("images.pdf");
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = function(e){
-            const imgData = e.target.result;
-            const img = new Image();
-            img.src = imgData;
-            img.onload = function(){
-                const pdfW = pdf.internal.pageSize.getWidth();
-                const pdfH = pdf.internal.pageSize.getHeight();
-                let ratio = Math.min(pdfW/img.width, pdfH/img.height) * 0.9;
-                let width = img.width * ratio;
-                let height = img.height * ratio;
-                let x = (pdfW - width)/2;
-                let y = (pdfH - height)/2 + 10; // beri jarak nama
-
-                pdf.setFontSize(12);
-                pdf.text(imageFiles[i].name, pdfW/2, 10, {align:'center'});
-
-                pdf.addImage(img,'JPEG',x,y,width,height);
-
-                if(i < imageFiles.length -1) pdf.addPage();
-                addImageToPDF(i+1);
-            }
-        };
-        reader.readAsDataURL(imageFiles[i].file);
+// ======= DOWNLOAD PDF =======
+function downloadPDF() {
+    if (uploadedFiles.length === 0) {
+        alert("Tidak ada gambar untuk di-download");
+        return;
     }
 
-    addImageToPDF(0);
-}
+    const doc = new jsPDF();
 
-// ===============================
-// CLEAR ALL
-// ===============================
-function clearAll(){
-    const tbody = document.querySelector("#imageList tbody");
-    if(tbody) tbody.innerHTML = "";
-    imageFiles = [];
+    uploadedFiles.forEach((file, idx) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const imgData = e.target.result;
+            // fit image ke halaman
+            const imgProps = doc.getImageProperties(imgData);
+            const pdfWidth = doc.internal.pageSize.getWidth() - 20; // margin 10
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            if (idx > 0) doc.addPage();
+            doc.text(file.name, 10, 10);
+            doc.addImage(imgData, 'JPEG', 10, 20, pdfWidth, pdfHeight);
+
+            // kalau sudah file terakhir, simpan PDF
+            if (idx === uploadedFiles.length - 1) {
+                doc.save("uploaded_images.pdf");
+            }
+        };
+        reader.readAsDataURL(file);
+    });
 }
