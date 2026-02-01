@@ -18,7 +18,17 @@
 
 <textarea id="cirInput" placeholder="Paste full CIR text di sini..."></textarea>
 <br>
-<button onclick="loadExcel()">Load Excel</button>
+
+<!-- INPUT FILE DISEMBUNYIKAN -->
+<input
+    type="file"
+    id="excelFile"
+    accept=".xlsx,.xls"
+    style="display:none"
+    onchange="loadExcel()"
+/>
+
+<button onclick="openFileDialog()">Load Excel</button>
 <button onclick="parseCIR()">Parse Manual</button>
 <button onclick="exportExcel()">Export Excel</button>
 <button onclick="clearAll()">Clear All</button>
@@ -32,7 +42,7 @@
     </thead>
     <tbody></tbody>
 </table>
-    
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="sscript.js"></script>
 </body>
