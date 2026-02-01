@@ -1,7 +1,7 @@
 // ===============================
 // CONFIG
 // ===============================
-console.log("sscript.js loaded OK"); // 🔍 buat cek di Console
+console.log("sscript.js loaded OK"); // cek di Console
 
 const KEY_FIELD = "Cust ID Klien";
 
@@ -54,7 +54,7 @@ function compareExcel() {
 }
 
 // ===============================
-// PROSES COMPARE
+// PROSES COMPARE (FIXED)
 // ===============================
 function processCompare() {
     const tbody = document.querySelector("#resultTable tbody");
@@ -79,22 +79,22 @@ function processCompare() {
             detail = "Tidak ada di Excel A";
             cls = "notfound";
         } else {
-            // ONT
-            if ((match["ONT"] || "").trim() === (b["ONT"] || "").trim()) {
-                ont = b["ONT"];
-            }
+            // ===== LOGIC COMPARE YANG BENAR =====
+            const ontMatch =
+                (match["ONT"] || "").trim() === (b["ONT"] || "").trim();
 
-            // MAC ONT
-            if ((match["MAC ONT"] || "").trim() === (b["MAC ONT"] || "").trim()) {
-                macOnt = b["MAC ONT"];
-            }
+            const macOntMatch =
+                (match["MAC ONT"] || "").trim() === (b["MAC ONT"] || "").trim();
 
-            // MAC STB
-            if ((match["MAC STB"] || "").trim() === (b["MAC STB"] || "").trim()) {
-                macStb = b["MAC STB"];
-            }
+            const macStbMatch =
+                (match["MAC STB"] || "").trim() === (b["MAC STB"] || "").trim();
 
-            if (ont && macOnt && macStb) {
+            // tampilkan data asli Excel B
+            ont = b["ONT"] || "";
+            macOnt = b["MAC ONT"] || "";
+            macStb = b["MAC STB"] || "";
+
+            if (ontMatch && macOntMatch && macStbMatch) {
                 status = "MATCH";
                 detail = "Data cocok";
                 cls = "match";
