@@ -2,6 +2,17 @@ let dataA = [];
 let dataB = [];
 let resultData = [];
 
+// ====== SETTING DATA KOMPER (TINGGAL EDIT DI SINI) ======
+const KEY_FIELD = "Cust ID Klien";   // kolom kunci utama (ID unik)
+
+const COMPARE_FIELDS = [
+    "Customer Name",
+    "Status",
+    "ONT",
+    "MAC ONT"
+];
+// =======================================================
+
 function readExcel(file, callback) {
     const reader = new FileReader();
     reader.onload = e => {
@@ -35,35 +46,44 @@ function processCompare() {
     resultData = [];
 
     dataB.forEach(b => {
-        const match = dataA.find(a => a["Cust ID Klien"] === b["Cust ID Klien"]);
+        const match = dataA.find(a => a[KEY_FIELD] === b[KEY_FIELD]);
 
         let status = "";
-        let detail = "";
+        let detailArr = [];
         let cls = "";
 
         if (!match) {
             status = "NOT FOUND";
-            detail = "Tidak ada di Excel A";
+            detailArr.push("Tidak ada di Excel A");
             cls = "notfound";
-        } else if (JSON.stringify(match) === JSON.stringify(b)) {
-            status = "MATCH";
-            detail = "Data cocok";
-            cls = "match";
         } else {
-            status = "FAILED";
-            detail = "Data tidak sesuai";
-            cls = "failed";
+            COMPARE_FIELDS.forEach(field => {
+                if ((match[field] || "") !== (b[field] || "")) {
+                    detailArr.push(`${field} tidak sama`);
+                }
+            });
+
+            if (detailArr.length === 0) {
+                status = "MATCH";
+                detailArr.push("Semua data cocok");
+                cls = "match";
+            } else {
+                status = "FAILED";
+                cls = "failed";
+            }
         }
 
+        const detail = detailArr.join(" | ");
+
         resultData.push({
-            "Cust ID Klien": b["Cust ID Klien"],
+            [KEY_FIELD]: b[KEY_FIELD],
             "Status Compare": status,
             "Detail": detail
         });
 
         tbody.innerHTML += `
             <tr class="${cls}">
-                <td>${b["Cust ID Klien"]}</td>
+                <td>${b[KEY_FIELD]}</td>
                 <td>${status}</td>
                 <td>${detail}</td>
             </tr>
