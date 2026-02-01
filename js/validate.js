@@ -1,5 +1,5 @@
 // ===============================
-// VALIDATE.JS
+// VALIDATE.JS – QUALITY IMAGE
 // ===============================
 console.log("validate.js loaded OK");
 
@@ -29,7 +29,7 @@ function renderList() {
                 <tr>
                     <td>${index + 1}</td>
                     <td>${file.name}</td>
-                    <td><img src="${e.target.result}" alt="${file.name}"></td>
+                    <td><img src="${e.target.result}" alt="${file.name}" style="max-width:150px; max-height:150px; object-fit:contain; border:1px solid #ccc; padding:2px;"></td>
                 </tr>
             `);
         };
@@ -38,7 +38,7 @@ function renderList() {
 }
 
 // ===============================
-// GENERATE PDF
+// GENERATE PDF – HIGH QUALITY
 // ===============================
 function generatePDF() {
     if(!imageFiles.length){
@@ -47,9 +47,11 @@ function generatePDF() {
     }
 
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF();
-
-    let count = 0;
+    const pdf = new jsPDF({
+        orientation: 'portrait', // bisa diganti 'landscape' jika perlu
+        unit: 'mm',
+        format: 'a4'
+    });
 
     function addImageToPDF(index){
         if(index >= imageFiles.length){
@@ -65,9 +67,13 @@ function generatePDF() {
             img.onload = function(){
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = pdf.internal.pageSize.getHeight();
-                let ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height);
+
+                // Hitung rasio asli gambar
+                let ratio = Math.min(pdfWidth / img.width, pdfHeight / img.height) * 0.95; // 95% supaya ada margin
                 let width = img.width * ratio;
                 let height = img.height * ratio;
+
+                // Centering
                 let x = (pdfWidth - width)/2;
                 let y = (pdfHeight - height)/2;
 
