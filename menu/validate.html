@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Validate Images</title>
+
 <link rel="stylesheet" href="../style.css">
 <style>
     body { font-family: Arial; margin:20px; }
@@ -19,12 +20,15 @@
 <a href="../index.html">⬅ Kembali ke Menu</a>
 <br><br>
 
+<!-- INPUT FILE TERSEMBUNYI (hidden) -->
 <input type="file" id="imageFiles" accept="image/*" multiple hidden>
 
-<button onclick="document.getElementById('imageFiles').click()">Upload Images</button>
-<button onclick="generatePDF()">Download PDF</button>
-<button onclick="clearAll()">Clear All</button>
+<!-- TOMBOL UNTUK MEMICU FILE INPUT -->
+<button type="button" onclick="document.getElementById('imageFiles').click()">Upload Images</button>
+<button type="button" onclick="generatePDF()">Download PDF</button>
+<button type="button" onclick="clearAll()">Clear All</button>
 
+<!-- TABEL PREVIEW -->
 <table id="imageList">
 <thead>
 <tr>
@@ -36,6 +40,7 @@
 <tbody></tbody>
 </table>
 
+<!-- LIBRARY JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="../js/validate.js"></script>
 
