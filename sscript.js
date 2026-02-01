@@ -76,10 +76,13 @@ function processCompare() {
         const detail = detailArr.join(" | ");
 
         resultData.push({
-            [KEY_FIELD]: b[KEY_FIELD],
-            "Status Compare": status,
-            "Detail": detail
-        });
+    [KEY_FIELD]: b[KEY_FIELD],
+    "ONT": b["ONT"] || "",
+    "MAC ONT": b["MAC ONT"] || "",
+    "MAC STB": b["MAC STB"] || "",
+    "Status Compare": status,
+    "Detail": detail
+});
 
         tbody.innerHTML += `
             <tr class="${cls}">
