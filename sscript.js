@@ -1,6 +1,8 @@
 const fields = [
-    "Root Cause",
-    "Action",
+    "CRT",
+    "SN ONT",
+    "MAC",
+    "PANJANG KABEL",
     "Status"
 ];
 
