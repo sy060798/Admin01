@@ -1,50 +1,42 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <title>CIR Parser</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        textarea { width: 100%; height: 260px; }
-        button { margin-top: 10px; padding: 10px 15px; cursor: pointer; }
-        table { border-collapse: collapse; margin-top: 20px; width: 100%; }
-        th, td { border: 1px solid #ccc; padding: 8px; }
-        th { background: #f4f4f4; text-align: left; }
-    </style>
+<meta charset="UTF-8">
+<title>Excel Data Komper</title>
+<style>
+    body { font-family: Arial; margin:20px; }
+    button { padding:10px 15px; margin:5px; }
+    table { width:100%; border-collapse:collapse; margin-top:20px; }
+    th, td { border:1px solid #ccc; padding:8px; }
+    th { background:#f4f4f4; }
+    .match { background:#d4edda; }
+    .failed { background:#f8d7da; }
+    .notfound { background:#fff3cd; }
+</style>
 </head>
 <body>
 
-<h2>CIR Text Parser</h2>
+<h2>Excel Data Compare</h2>
 
-<textarea id="cirInput" placeholder="Paste full CIR text di sini..."></textarea>
+<input type="file" id="fileA" accept=".xlsx,.xls">
+<input type="file" id="fileB" accept=".xlsx,.xls">
 <br>
-
-<!-- INPUT FILE DISMBUNYIKAN TOTAL -->
-<input
-    type="file"
-    id="excelFile"
-    accept=".xlsx,.xls"
-    style="display:none"
-    onchange="loadExcel()"
-/>
-
-<button onclick="openFileDialog()">Load Excel</button>
-<button onclick="parseCIR()">Parse Manual</button>
-<button onclick="exportExcel()">Export Excel</button>
-<button onclick="clearAll()">Clear All</button>
+<button onclick="compareExcel()">Compare</button>
+<button onclick="exportExcel()">Export Result</button>
+<button onclick="clearAll()">Clear</button>
 
 <table id="resultTable">
-    <thead>
-        <tr>
-            <th>Field</th>
-            <th>Value</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
+<thead>
+<tr>
+    <th>Cust ID Klien</th>
+    <th>Status Compare</th>
+    <th>Detail</th>
+</tr>
+</thead>
+<tbody></tbody>
 </table>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="sscript.js"></script>
-
 </body>
 </html>
