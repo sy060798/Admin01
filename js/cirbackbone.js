@@ -18,28 +18,36 @@ const exportFields = [
 // ===============================
 function processCir() {
     resultData = [];
-    const tbody = document.querySelector("#resultTable tbody");
+
+    const table = document.getElementById("resultTable");
+    if (!table) {
+        console.error("resultTable tidak ditemukan");
+        return;
+    }
+
+    const tbody = table.querySelector("tbody");
     tbody.innerHTML = "";
 
     // ===== baca excel =====
-    const file = document.getElementById("excelFile").files[0];
-    if (file) {
+    const fileInput = document.getElementById("excelFile");
+    if (fileInput && fileInput.files.length) {
+        const file = fileInput.files[0];
         readExcel(file, rows => {
             rows.forEach(r => {
                 pushRow(
-                    r["Site"] || r["site"],
-                    r["Ticket/WO"] || r["ticket/wo"],
-                    r["Span Problem"] || r["span problem"],
-                    r["Root Cause Action"] || r["root cause action"]
+                    r["Site"] || r["site"] || "",
+                    r["Ticket/WO"] || r["ticket/wo"] || "",
+                    r["Span Problem"] || r["span problem"] || "",
+                    r["Root Cause Action"] || r["root cause action"] || ""
                 );
             });
         });
     }
 
-    // ===== baca text cir =====
-    const text = document.getElementById("cirText").value;
-    if (text.trim()) {
-        const data = parseCirText(text);
+    // ===== baca text cir manual =====
+    const cirTextEl = document.getElementById("cirText");
+    if (cirTextEl && cirTextEl.value.trim()) {
+        const data = parseCirText(cirTextEl.value);
         if (data) {
             pushRow(
                 data.site,
@@ -69,15 +77,16 @@ function readExcel(file, callback) {
 // ===============================
 function parseCirText(text) {
     const get = label => {
-        const m = text.match(new RegExp(label + "\\s*:\\s*(.+)", "i"));
-        return m ? m[1].trim() : "";
+        const regex = new RegExp(label + "\\s*:\\s*(.+)", "i");
+        const match = text.match(regex);
+        return match ? match[1].trim() : "";
     };
 
     return {
         site: get("TR INDOSAT"),
         ticket: get("TT FLP"),
         span: get("Span Problem"),
-        root: get("Root Cause|Action")
+        root: get("Root Cause Action|Root Cause|Action")
     };
 }
 
@@ -94,15 +103,17 @@ function pushRow(site, ticket, span, root) {
 
     resultData.push(row);
 
-    document.querySelector("#resultTable tbody")
-        .insertAdjacentHTML("beforeend", `
-            <tr>
-                <td>${row["site"]}</td>
-                <td>${row["ticket/wo"]}</td>
-                <td>${row["span problem"]}</td>
-                <td>${row["root cause action"]}</td>
-            </tr>
-        `);
+    const tbody = document.querySelector("#resultTable tbody");
+    if (!tbody) return;
+
+    tbody.insertAdjacentHTML("beforeend", `
+        <tr>
+            <td>${row["site"]}</td>
+            <td>${row["ticket/wo"]}</td>
+            <td>${row["span problem"]}</td>
+            <td>${row["root cause action"]}</td>
+        </tr>
+    `);
 }
 
 // ===============================
@@ -114,7 +125,10 @@ function exportExcel() {
         return;
     }
 
-    const ws = XLSX.utils.json_to_sheet(resultData);
+    const ws = XLSX.utils.json_to_sheet(resultData, {
+        header: exportFields
+    });
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "cir backbone");
     XLSX.writeFile(wb, "cir_backbone.xlsx");
@@ -125,7 +139,8 @@ function exportExcel() {
 // ===============================
 function clearAll() {
     resultData = [];
-    document.querySelector("#resultTable tbody").innerHTML = "";
+    const tbody = document.querySelector("#resultTable tbody");
+    if (tbody) tbody.innerHTML = "";
 }
 
 // expose
