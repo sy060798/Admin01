@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Extract Excel</title>
+<link rel="stylesheet" href="../style.css">
+
+<style>
+table { width:100%; border-collapse:collapse; margin-top:15px }
+th,td { border:1px solid #ccc; padding:6px }
+th { background:#f4f4f4 }
+</style>
+</head>
+<body>
+
+<h2>Excel Data Extractor</h2>
+<a href="../index.html">⬅ Kembali ke Menu</a><br><br>
+
+<input type="file" id="excelFile" accept=".xlsx,.xls">
+
+<br><br>
+
+<button onclick="exportExcel()">Export Excel</button>
+
+<table id="dataTable">
+<thead></thead>
+<tbody></tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="../js/extract.js"></script>
+</body>
+</html>
