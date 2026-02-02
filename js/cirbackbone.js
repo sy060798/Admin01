@@ -1,8 +1,7 @@
-console.log("CIRBACKBONE.js loaded");
+console.log("cirbackbone.js loaded");
 
-// ==============================
+// ===============================
 // ----- LIST -----
-// DATA YANG DIAMBIL
 // ===============================
 const EXPORT_FIELDS = [
     "TT FLP",
@@ -11,13 +10,10 @@ const EXPORT_FIELDS = [
     "Action"
 ];
 
-// ===============================
 let rawData = [];
 let resultData = [];
 
-// ===============================
 // MODE SWITCH
-// ===============================
 document.querySelectorAll("input[name='mode']").forEach(r => {
     r.addEventListener("change", () => {
         document.getElementById("excelBox").style.display =
@@ -27,9 +23,7 @@ document.querySelectorAll("input[name='mode']").forEach(r => {
     });
 });
 
-// ===============================
 // READ EXCEL
-// ===============================
 document.getElementById("excelFile").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -44,9 +38,7 @@ document.getElementById("excelFile").addEventListener("change", e => {
     reader.readAsArrayBuffer(file);
 });
 
-// ===============================
-// ADD MANUAL CIR
-// ===============================
+// ADD MANUAL
 function addManual() {
     const text = document.getElementById("cirText").value;
     if (!text.trim()) return alert("CIR kosong");
@@ -56,8 +48,7 @@ function addManual() {
 
     text.split("\n").forEach(line => {
         EXPORT_FIELDS.forEach(key => {
-            const reg = new RegExp(`^${key}\\s*:\\s*(.*)$`, "i");
-            const m = line.match(reg);
+            const m = line.match(new RegExp(`^${key}\\s*:\\s*(.*)$`, "i"));
             if (m) obj[key] = m[1].trim();
         });
     });
@@ -67,16 +58,13 @@ function addManual() {
     renderTable();
 }
 
-// ===============================
-// PROSES DATA
-// ===============================
+// PROCESS
 function runProcess() {
     if (rawData.length) {
-        resultData = [];
-        rawData.forEach(r => {
-            let obj = {};
-            EXPORT_FIELDS.forEach(f => obj[f] = r[f] || "");
-            resultData.push(obj);
+        resultData = rawData.map(r => {
+            let o = {};
+            EXPORT_FIELDS.forEach(f => o[f] = r[f] || "");
+            return o;
         });
     }
 
@@ -88,28 +76,23 @@ function runProcess() {
     renderTable();
 }
 
-// ===============================
-// RENDER TABLE
-// ===============================
+// TABLE
 function renderTable() {
     const thead = document.querySelector("#dataTable thead");
     const tbody = document.querySelector("#dataTable tbody");
 
-    thead.innerHTML = `
-        <tr>${EXPORT_FIELDS.map(f => `<th>${f}</th>`).join("")}</tr>
-    `;
+    thead.innerHTML =
+        `<tr>${EXPORT_FIELDS.map(f => `<th>${f}</th>`).join("")}</tr>`;
 
     tbody.innerHTML = "";
     resultData.forEach(r => {
-        tbody.insertAdjacentHTML("beforeend", `
-            <tr>${EXPORT_FIELDS.map(f => `<td>${r[f]}</td>`).join("")}</tr>
-        `);
+        tbody.insertAdjacentHTML("beforeend",
+            `<tr>${EXPORT_FIELDS.map(f => `<td>${r[f]}</td>`).join("")}</tr>`
+        );
     });
 }
 
-// ===============================
-// EXPORT EXCEL
-// ===============================
+// EXPORT
 function exportExcel() {
     if (!resultData.length) return alert("Tidak ada data");
 
