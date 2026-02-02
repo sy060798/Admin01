@@ -6,9 +6,23 @@
 <link rel="stylesheet" href="../style.css">
 
 <style>
-table { width:100%; border-collapse:collapse; margin-top:15px }
-th,td { border:1px solid #ccc; padding:6px }
-th { background:#f4f4f4 }
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+th, td {
+    border:1px solid #ccc;
+    padding:6px;
+}
+th {
+    background:#f4f4f4;
+}
+.preset button {
+    margin-right:6px;
+    padding:6px 12px;
+    cursor:pointer;
+}
 </style>
 </head>
 <body>
@@ -18,16 +32,30 @@ th { background:#f4f4f4 }
 
 <input type="file" id="excelFile" accept=".xlsx,.xls">
 
-<br><br>
+<!-- PRESET -->
+<div class="preset" style="margin-top:10px">
+    <b>Preset Kolom:</b>
+    <button onclick="selectPreset(['Ticket/WO','Site'])">🎟 Ticket/WO + Site</button>
+    <button onclick="selectAllCols()">✔ Pilih Semua</button>
+    <button onclick="clearCols()">✖ Kosongkan</button>
+</div>
 
+<!-- COLUMN CHECKBOX -->
+<div id="columnSelector" style="margin-top:10px"></div>
+
+<br>
 <button onclick="exportExcel()">Export Excel</button>
 
+<!-- DATA PREVIEW -->
 <table id="dataTable">
-<thead></thead>
-<tbody></tbody>
+    <thead></thead>
+    <tbody></tbody>
 </table>
 
+<!-- XLSX -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<!-- JS -->
 <script src="../js/extract.js"></script>
+
 </body>
 </html>
