@@ -23,6 +23,9 @@ th {
     padding:6px 12px;
     cursor:pointer;
 }
+#processBtn {
+    margin-left:10px;
+}
 </style>
 </head>
 <body>
@@ -30,10 +33,15 @@ th {
 <h2>Excel Data Extractor</h2>
 <a href="../index.html">⬅ Kembali ke Menu</a><br><br>
 
+<!-- UPLOAD -->
 <input type="file" id="excelFile" accept=".xlsx,.xls">
+<button id="processBtn" onclick="processExcel()" disabled>
+    ▶ Jalankan
+</button>
+<span id="statusInfo" style="margin-left:10px;color:green"></span>
 
 <!-- PRESET -->
-<div class="preset" style="margin-top:10px">
+<div class="preset" style="margin-top:15px">
     <b>Preset Kolom:</b>
     <button onclick="selectPreset(['Ticket/WO','Site'])">🎟 Ticket/WO + Site</button>
     <button onclick="selectAllCols()">✔ Pilih Semua</button>
