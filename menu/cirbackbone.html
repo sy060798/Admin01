@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>cir backbone</title>
+
+    <!-- matikan favicon -->
+    <link rel="icon" href="data:,">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<h2>cir backbone</h2>
+<a href="../index.html">⬅ kembali ke menu</a>
+<br><br>
+
+<h3>upload excel</h3>
+<input type="file" id="excelFile" accept=".xlsx,.xls">
+
+<br><br>
+
+<h3>paste cir manual</h3>
+<textarea id="cirText" rows="12" style="width:100%"
+placeholder="paste cir di sini..."></textarea>
+
+<br><br>
+
+<button onclick="processCir()">jalan</button>
+<button onclick="exportExcel()">export excel</button>
+<button onclick="clearAll()">clear</button>
+
+<table id="resultTable" style="width:100%;border-collapse:collapse;margin-top:15px">
+    <thead>
+        <tr>
+            <th>site</th>
+            <th>ticket/wo</th>
+            <th>span problem</th>
+            <th>root cause action</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="../js/cirbackbone.js"></script>
+
+</body>
+</html>
