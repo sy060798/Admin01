@@ -1,7 +1,17 @@
 console.log("extract.js loaded");
 
+// ===============================
+// ----- LIST -----
+// FIELD YANG DIAMBIL
+// ===============================
+const EXPORT_FIELDS = [
+    "Site",
+    "Ticket/WO"
+];
+
+// ===============================
 let rawData = [];
-let selectedCols = [];
+let resultData = [];
 
 // ===============================
 // READ EXCEL
@@ -16,55 +26,33 @@ document.getElementById("excelFile").addEventListener("change", e => {
         const sheet = wb.Sheets[wb.SheetNames[0]];
         rawData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-        renderColumnSelector();
-        renderTable();
+        document.getElementById("runBtn").disabled = false;
+        alert("File berhasil di-upload. Klik JALAN untuk proses.");
     };
     reader.readAsArrayBuffer(file);
 });
 
 // ===============================
-// COLUMN CHECKLIST
+// PROSES EXTRACT
 // ===============================
-function renderColumnSelector() {
-    const box = document.getElementById("columnSelector");
-    box.innerHTML = "<b>Pilih kolom untuk export:</b><br>";
+function runExtract() {
+    resultData = [];
 
-    if (!rawData.length) return;
+    rawData.forEach(row => {
+        let obj = {};
 
-    const cols = Object.keys(rawData[0]);
+        EXPORT_FIELDS.forEach(col => {
+            obj[col] = row[col] || "";
+        });
 
-    cols.forEach(c => {
-        box.insertAdjacentHTML("beforeend", `
-            <label style="margin-right:12px">
-                <input type="checkbox" value="${c}" checked> ${c}
-            </label>
-        `);
+        resultData.push(obj);
     });
+
+    renderTable();
 }
 
 // ===============================
-// PRESET FUNCTIONS
-// ===============================
-function selectPreset(cols) {
-    document.querySelectorAll("#columnSelector input").forEach(cb => {
-        cb.checked = cols.includes(cb.value);
-    });
-}
-
-function selectAllCols() {
-    document.querySelectorAll("#columnSelector input").forEach(cb => {
-        cb.checked = true;
-    });
-}
-
-function clearCols() {
-    document.querySelectorAll("#columnSelector input").forEach(cb => {
-        cb.checked = false;
-    });
-}
-
-// ===============================
-// RENDER TABLE PREVIEW
+// TAMPILKAN TABLE
 // ===============================
 function renderTable() {
     const thead = document.querySelector("#dataTable thead");
@@ -73,15 +61,21 @@ function renderTable() {
     thead.innerHTML = "";
     tbody.innerHTML = "";
 
-    if (!rawData.length) return;
+    if (!resultData.length) return;
 
-    const cols = Object.keys(rawData[0]);
+    // header
+    thead.innerHTML = `
+        <tr>
+            ${EXPORT_FIELDS.map(c => `<th>${c}</th>`).join("")}
+        </tr>
+    `;
 
-    thead.innerHTML = `<tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr>`;
-
-    rawData.forEach(row => {
+    // body
+    resultData.forEach(r => {
         tbody.insertAdjacentHTML("beforeend", `
-            <tr>${cols.map(c => `<td>${row[c]}</td>`).join("")}</tr>
+            <tr>
+                ${EXPORT_FIELDS.map(c => `<td>${r[c]}</td>`).join("")}
+            </tr>
         `);
     });
 }
@@ -90,21 +84,12 @@ function renderTable() {
 // EXPORT EXCEL
 // ===============================
 function exportExcel() {
-    const checked = document.querySelectorAll("#columnSelector input:checked");
-    if (!checked.length) {
-        alert("Pilih minimal 1 kolom");
+    if (!resultData.length) {
+        alert("Tidak ada data untuk diexport");
         return;
     }
 
-    selectedCols = Array.from(checked).map(cb => cb.value);
-
-    const exportData = rawData.map(row => {
-        let obj = {};
-        selectedCols.forEach(col => obj[col] = row[col]);
-        return obj;
-    });
-
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    const ws = XLSX.utils.json_to_sheet(resultData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Extract Result");
     XLSX.writeFile(wb, "hasil_extract.xlsx");
