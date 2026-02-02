@@ -2,6 +2,7 @@ console.log("cirbackbone.js loaded");
 
 // ===============================
 // ----- LIST -----
+// FIELD YANG DIAMBIL
 // ===============================
 const EXPORT_FIELDS = [
     "TT FLP",
@@ -13,7 +14,9 @@ const EXPORT_FIELDS = [
 let rawData = [];
 let resultData = [];
 
+// ===============================
 // MODE SWITCH
+// ===============================
 document.querySelectorAll("input[name='mode']").forEach(r => {
     r.addEventListener("change", () => {
         document.getElementById("excelBox").style.display =
@@ -23,7 +26,9 @@ document.querySelectorAll("input[name='mode']").forEach(r => {
     });
 });
 
+// ===============================
 // READ EXCEL
+// ===============================
 document.getElementById("excelFile").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -38,7 +43,9 @@ document.getElementById("excelFile").addEventListener("change", e => {
     reader.readAsArrayBuffer(file);
 });
 
-// ADD MANUAL
+// ===============================
+// ADD MANUAL CIR
+// ===============================
 function addManual() {
     const text = document.getElementById("cirText").value;
     if (!text.trim()) return alert("CIR kosong");
@@ -58,7 +65,9 @@ function addManual() {
     renderTable();
 }
 
-// PROCESS
+// ===============================
+// PROSES DATA
+// ===============================
 function runProcess() {
     if (rawData.length) {
         resultData = rawData.map(r => {
@@ -76,7 +85,9 @@ function runProcess() {
     renderTable();
 }
 
-// TABLE
+// ===============================
+// RENDER TABLE
+// ===============================
 function renderTable() {
     const thead = document.querySelector("#dataTable thead");
     const tbody = document.querySelector("#dataTable tbody");
@@ -86,13 +97,16 @@ function renderTable() {
 
     tbody.innerHTML = "";
     resultData.forEach(r => {
-        tbody.insertAdjacentHTML("beforeend",
+        tbody.insertAdjacentHTML(
+            "beforeend",
             `<tr>${EXPORT_FIELDS.map(f => `<td>${r[f]}</td>`).join("")}</tr>`
         );
     });
 }
 
-// EXPORT
+// ===============================
+// EXPORT EXCEL
+// ===============================
 function exportExcel() {
     if (!resultData.length) return alert("Tidak ada data");
 
