@@ -15,11 +15,11 @@ document.getElementById('upload').addEventListener('change', async (e) => {
     alert('Excel berhasil diupload! Total WO Klien: ' + excelData.length);
 });
 
-// Generate batch 5 WO Klien
+// Generate batch max 5 WO
 function generateBatch() {
     const input = document.getElementById('ticketInput').value;
     if (!input) return alert('Masukkan No WO Klien terlebih dahulu!');
-    const woList = input.split(',').map(t => t.trim()).slice(0,5); // max 5
+    const woList = input.split(',').map(t => t.trim()).slice(0,5);
     displayTickets(woList);
 }
 
@@ -31,87 +31,124 @@ function nextBatch() {
     displayTickets(nextWO);
 }
 
-// Ambil RFO dari report: hapus *, ambil fragment yang mengandung keyword (case-insensitive)
+// Ambil RFO dari report: case-insensitive, huruf asli
 function getRFO(reportText) {
     if (!reportText) return '';
     const keywords = ['Rsch','PENDING','Cancel','TEAM VISIT','NOTE:','Status:','REQ'];
-
-    // Hapus tanda *
     const cleanText = reportText.replace(/\*/g, '');
-
-    // Pecah report menjadi fragment berdasarkan koma, titik koma, atau baris baru
     const fragments = cleanText.split(/[,;\n]/).map(f => f.trim());
-
-    // Ambil fragment pertama yang mengandung keyword (case-insensitive)
     for (let f of fragments) {
         if (keywords.some(kw => f.toUpperCase().includes(kw.toUpperCase()))) {
-            return f; // ambil hanya satu fragment
+            return f;
         }
     }
-
     return '';
 }
 
-// Tampilkan tiket di tabel
+// Tampilkan tiket horizontal per batch
 function displayTickets(woList) {
-    const tbody = document.querySelector('#resultTable tbody');
-    tbody.innerHTML = ''; // reset tabel
+    const container = document.getElementById('resultContainer');
+    container.innerHTML = ''; // reset container
+
+    const table = document.createElement('table');
+    table.style.borderCollapse = "collapse";
+    table.style.width = "100%";
+
+    // Header
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    ['No WO Klien','HOLD DATE','UNHOLD DATE','RFO','Report','Status'].forEach(h => {
+        const th = document.createElement('th');
+        th.innerText = h;
+        th.style.border = "1px solid #333";
+        th.style.padding = "5px";
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Body
+    const tbody = document.createElement('tbody');
 
     woList.forEach(wo => {
+        // Filter data untuk WO ini, urutkan Validate Date
         const rowData = excelData
             .filter(d => (d['No Wo Klien'] || '').trim().toLowerCase() === wo.trim().toLowerCase())
-            .sort((a,b) => new Date(a['Validate Date']) - new Date(b['Validate Date'])); // lama → baru
+            .sort((a,b) => new Date(a['Validate Date']) - new Date(b['Validate Date']));
 
         if (rowData.length === 0) return;
 
-        // Ambil HOLD / UNHOLD maksimal 5 dari Pending / Reschedule
-        const hold = [], unhold = [];
-        let count = 0;
-        for (let r of rowData) {
-            if (count >= 5) break;
-            if (r['Status'] !== 'Pending' && r['Status'] !== 'Reschedule') continue; 
-            hold.push(r['Validate Date'] || '');
-            unhold.push(r['Validate Date'] || ''); // akan diganti nanti dengan Validate Date terakhir
-            count++;
-        }
+        // Cari semua HOLD (Pending/Reschedule) dan UNHOLD terkait
+        const holdList = [];
+        const unholdList = [];
 
-        // Ambil baris Pending/Reschedule terakhir untuk RFO & Report & UNHOLD terakhir
+        rowData.forEach((r, idx) => {
+            if (r['Status'] === 'Pending' || r['Status'] === 'Reschedule') {
+                holdList.push(r['Validate Date'] || '');
+
+                // UNHOLD = Validate Date dari baris terakhir sampai status Done / Cancel / BTN
+                let unholdDate = '';
+                for (let j = idx + 1; j < rowData.length; j++) {
+                    if (['Done','Cancel','BTN'].includes(rowData[j]['Status'])) {
+                        unholdDate = rowData[j]['Validate Date'] || '';
+                        break;
+                    }
+                }
+                if (!unholdDate && idx === rowData.length -1) {
+                    // Jika tidak ada Done/Cancel/BTN setelahnya, ambil Validate Date terakhir
+                    unholdDate = r['Validate Date'] || '';
+                }
+                unholdList.push(unholdDate);
+            }
+        });
+
+        // Pending/Reschedule terakhir untuk RFO & Report
         const lastPending = [...rowData]
             .filter(r => r['Status'] === 'Pending' || r['Status'] === 'Reschedule')
             .sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
 
-        // Update UNHOLD dengan Validate Date terakhir dari baris Pending/Reschedule
-        for (let i = 0; i < unhold.length; i++) {
-            if (lastPending) unhold[i] = lastPending['Validate Date'] || unhold[i];
-        }
-
-        // Ambil status terakhir dari baris terbaru (Validate Date terbaru)
+        // Status terakhir dari baris terbaru
         const latestRow = [...rowData].sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
 
+        // Buat satu baris horizontal
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${wo}</td>
-            <td>${hold[0]||''}</td>
-            <td>${unhold[0]||''}</td>
-            <td>${hold[1]||''}</td>
-            <td>${unhold[1]||''}</td>
-            <td>${hold[2]||''}</td>
-            <td>${unhold[2]||''}</td>
-            <td>${hold[3]||''}</td>
-            <td>${unhold[3]||''}</td>
-            <td>${hold[4]||''}</td>
-            <td>${unhold[4]||''}</td>
-            <td>${lastPending ? getRFO(lastPending['report']) : ''}</td>
-            <td>${lastPending ? lastPending['Report Installation'] || '' : ''}</td>
-            <td>${latestRow['Status'] || ''}</td>
-        `;
+
+        const holdStr = holdList.join(', ');
+        const unholdStr = unholdList.join(', ');
+
+        [wo, holdStr, unholdStr, lastPending ? getRFO(lastPending['report']) : '', lastPending ? lastPending['Report Installation'] || '' : '', latestRow['Status'] || ''].forEach(val => {
+            const td = document.createElement('td');
+            td.innerText = val;
+            td.style.border = "1px solid #333";
+            td.style.padding = "5px";
+            tr.appendChild(td);
+        });
+
         tbody.appendChild(tr);
     });
+
+    table.appendChild(tbody);
+
+    // Judul List
+    const title = document.createElement('h4');
+    title.innerText = `List ${batchIndex/5 + 1}`;
+    container.appendChild(title);
+    container.appendChild(table);
 }
 
-// Export tabel ke Excel
+// Export semua list ke Excel
 function exportExcel() {
-    const table = document.getElementById('resultTable');
-    const wb = XLSX.utils.table_to_book(table, {sheet: "SLA Report"});
+    const container = document.getElementById('resultContainer');
+    if (!container) return alert('Tidak ada data untuk export!');
+
+    const tables = container.querySelectorAll('table');
+    if (tables.length === 0) return alert('Tidak ada data untuk export!');
+
+    const wb = XLSX.utils.book_new();
+    tables.forEach((tbl, idx) => {
+        const ws = XLSX.utils.table_to_sheet(tbl);
+        XLSX.utils.book_append_sheet(wb, ws, `List ${idx+1}`);
+    });
+
     XLSX.writeFile(wb, "SLA_Report.xlsx");
 }
