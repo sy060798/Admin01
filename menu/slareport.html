@@ -3,54 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <title>SLA Report – PT Mega Akses</title>
-
-    <!-- CSS utama -->
     <link rel="stylesheet" href="../style.css">
-
-    <!-- SheetJS untuk export/import Excel -->
+    <!-- SheetJS -->
     <script defer src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-
-    <!-- JS SLA Report -->
     <script defer src="../js/slareport.js"></script>
 </head>
 <body>
-    <h3>📊 SLA Report – PT Mega Akses</h3>
 
-    <!-- Upload Excel -->
-    <input type="file" id="upload" accept=".xlsx,.xls">
+<h2>SLA Report – PT Mega Akses</h2>
 
-    <!-- Input batch WO Klien -->
-    <div>
-        <label>Masukkan No WO Klien (max 5, pisahkan koma):</label>
-        <input type="text" id="ticketInput" placeholder="Contoh: WO001,WO002">
-        <button onclick="generateBatch()">Generate Batch</button>
-    </div>
+<input type="file" id="upload" accept=".xlsx,.xls">
 
-    <!-- Tombol export & next batch -->
-    <button onclick="exportExcel()">⬇ Export Excel</button>
-    <button onclick="nextBatch()">➡ Next Batch</button>
+<div>
+    <label>Masukkan No WO Klien (max 5, pisahkan koma):</label>
+    <input type="text" id="ticketInput" placeholder="Contoh: WO001,WO002">
+    <button onclick="generateBatch()">Generate Batch</button>
+    <button onclick="nextBatch()">Next Batch</button>
+</div>
 
-    <!-- Tabel hasil -->
-    <table id="resultTable">
-        <thead>
-            <tr>
-                <th>No WO Klien</th>
-                <th>HOLD DATE 1</th>
-                <th>UNHOLD DATE 1</th>
-                <th>HOLD DATE 2</th>
-                <th>UNHOLD DATE 2</th>
-                <th>HOLD DATE 3</th>
-                <th>UNHOLD DATE 3</th>
-                <th>HOLD DATE 4</th>
-                <th>UNHOLD DATE 4</th>
-                <th>HOLD DATE 5</th>
-                <th>UNHOLD DATE 5</th>
-                <th>RFO Terakhir Pending/Reschedule</th>
-                <th>Report Terakhir Pending/Reschedule</th>
-                <th>Status Terakhir</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+<button onclick="exportExcel()">⬇ Export Excel</button>
+
+<div id="resultContainer"></div>
+
 </body>
 </html>
