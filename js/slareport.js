@@ -2,7 +2,25 @@ let excelData = [];
 let batchIndex = 0;
 let currentBatchWO = [];
 
-// Upload Excel
+// ------------------- Fungsi bantu -------------------
+// Hapus tanda * dan trim
+function cleanData(str) {
+    if (!str) return '';
+    return str.replace(/\*/g, '').trim();
+}
+
+// Ambil RFO dari Pending/Resch terakhir
+function getRFO(reportText) {
+    if (!reportText) return '';
+    const keywords = ['Rsch','PENDING','Cancel','TEAM VISIT','NOTE:','Status:','REQ'];
+    const fragments = cleanData(reportText).split(/[,;\n]/).map(f => f.trim());
+    for (let f of fragments) {
+        if (keywords.some(kw => f.toUpperCase().includes(kw.toUpperCase()))) return f;
+    }
+    return '';
+}
+
+// ------------------- Upload Excel -------------------
 document.getElementById('upload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return alert('File tidak ditemukan!');
@@ -15,7 +33,7 @@ document.getElementById('upload').addEventListener('change', async (e) => {
     alert(`Excel berhasil diupload! Total WO Klien: ${excelData.length}`);
 });
 
-// Generate batch max 5 WO
+// ------------------- Generate Batch -------------------
 function generateBatch() {
     if (excelData.length === 0) return alert('Upload Excel dulu!');
     const input = document.getElementById('ticketInput').value;
@@ -26,7 +44,7 @@ function generateBatch() {
     displayTickets(woList);
 }
 
-// Next batch
+// ------------------- Next Batch -------------------
 function nextBatch() {
     if (excelData.length === 0) return alert('Upload Excel dulu!');
     batchIndex += 5;
@@ -36,22 +54,10 @@ function nextBatch() {
     displayTickets(nextWO);
 }
 
-// Ambil RFO dari Pending/Reschedule terakhir, case-insensitive, huruf asli
-function getRFO(reportText) {
-    if (!reportText) return '';
-    const keywords = ['Rsch','PENDING','Cancel','TEAM VISIT','NOTE:','Status:','REQ'];
-    const cleanText = reportText.replace(/\*/g, '');
-    const fragments = cleanText.split(/[,;\n]/).map(f => f.trim());
-    for (let f of fragments) {
-        if (keywords.some(kw => f.toUpperCase().includes(kw.toUpperCase()))) return f;
-    }
-    return '';
-}
-
-// Tampilkan tiket horizontal per batch
+// ------------------- Tampilkan Horizontal List -------------------
 function displayTickets(woList) {
     const container = document.getElementById('resultContainer');
-    container.innerHTML = ''; // reset container
+    container.innerHTML = '';
 
     const table = document.createElement('table');
     table.style.borderCollapse = "collapse";
@@ -60,7 +66,7 @@ function displayTickets(woList) {
     // Header
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    ['No WO Klien','HOLD DATE','UNHOLD DATE','RFO','Report','Status'].forEach(h => {
+    ['No WO Klien','HOLD DATE','UNHOLD DATE','RFO','Report','Status','Validate Date'].forEach(h => {
         const th = document.createElement('th');
         th.innerText = h;
         th.style.border = "1px solid #333";
@@ -79,14 +85,13 @@ function displayTickets(woList) {
 
         if (rowData.length === 0) return;
 
-        // HOLD / UNHOLD logic
         const holdList = [];
         const unholdList = [];
 
         rowData.forEach((r, idx) => {
             if (r['Status'] === 'Pending' || r['Status'] === 'Reschedule') {
                 holdList.push(r['Validate Date'] || '');
-                // UNHOLD = Validate Date dari baris pertama setelah Pending/Resch sampai Done/Cancel/BTN
+                // UNHOLD = Validate Date pertama setelah Pending/Resch sampai Done/Cancel/BTN
                 let unholdDate = '';
                 for (let j = idx+1; j<rowData.length; j++){
                     if(['Done','Cancel','BTN'].includes(rowData[j]['Status'])){
@@ -99,12 +104,10 @@ function displayTickets(woList) {
             }
         });
 
-        // Pending/Resch terakhir untuk RFO & Report
         const lastPending = [...rowData]
             .filter(r => r['Status']==='Pending' || r['Status']==='Reschedule')
             .sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
 
-        // Status terakhir
         const latestRow = [...rowData].sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
 
         const tr = document.createElement('tr');
@@ -114,10 +117,11 @@ function displayTickets(woList) {
 
         [wo, holdStr, unholdStr,
          lastPending ? getRFO(lastPending['report']) : '',
-         lastPending ? lastPending['Report Installation'] || '' : '',
-         latestRow['Status'] || ''].forEach(val => {
+         lastPending ? cleanData(lastPending['Report Installation']) || '' : '',
+         latestRow['Status'] || '',
+         latestRow['Validate Date'] || ''].forEach(val=>{
             const td = document.createElement('td');
-            td.innerText = val;
+            td.innerText = cleanData(val);
             td.style.border = "1px solid #333";
             td.style.padding = "5px";
             tr.appendChild(td);
@@ -128,14 +132,13 @@ function displayTickets(woList) {
 
     table.appendChild(tbody);
 
-    // Judul List
     const title = document.createElement('h4');
     title.innerText = `List ${batchIndex/5 + 1}`;
     container.appendChild(title);
     container.appendChild(table);
 }
 
-// Export Excel
+// ------------------- Export Excel -------------------
 function exportExcel() {
     const container = document.getElementById('resultContainer');
     if (!container) return alert('Tidak ada data untuk export!');
