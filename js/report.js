@@ -3,11 +3,10 @@ let reconData = [];
 
 document.getElementById("upload").addEventListener("change", handleFile);
 
-// ================== EXCEL DATE FIX (AKTUAL, TANPA FALLBACK) ==================
+// ================== EXCEL DATE FIX ==================
 function excelDateToJSDate(value) {
     if (!value) return "";
 
-    // Excel date serial (number)
     if (typeof value === "number") {
         const utc_days = Math.floor(value - 25569);
         const utc_value = utc_days * 86400;
@@ -25,35 +24,24 @@ function excelDateToJSDate(value) {
         return date_info;
     }
 
-    // String date (dibersihkan & parse manual)
     if (typeof value === "string") {
-        const clean = value
-            .replace(/\u00A0/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
-
-        const m = clean.match(
-            /(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/
-        );
+        const clean = value.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
+        const m = clean.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
         if (!m) return "";
-
         const [, y, mo, d, h, mi, s] = m.map(Number);
         return new Date(y, mo - 1, d, h, mi, s);
     }
-
     return "";
 }
 
 const getDate = d => {
     const dt = excelDateToJSDate(d);
-    if (!dt || isNaN(dt)) return "";
-    return dt.toISOString().slice(0, 10);
+    return dt && !isNaN(dt) ? dt.toISOString().slice(0, 10) : "";
 };
 
 const getTime = d => {
     const dt = excelDateToJSDate(d);
-    if (!dt || isNaN(dt)) return "";
-    return dt.toTimeString().slice(0, 8);
+    return dt && !isNaN(dt) ? dt.toTimeString().slice(0, 8) : "";
 };
 
 function compareDateTime(a, b) {
@@ -89,7 +77,7 @@ function handleFile(e) {
 // ================= CORE PROCESS =================
 function processRow(row) {
     let report = row["Report Installation"] || "";
-    report = report.replace(/\*/g, ""); // abaikan tanda *
+    report = report.replace(/\*/g, "");
 
     const getNumber = val => {
         if (!val) return 0;
@@ -107,7 +95,6 @@ function processRow(row) {
         return m ? parseInt(m[1]) : 0;
     };
 
-    // ================= DESCRIPSI =================
     const getDescription = () => {
         const m = report.match(
             /(TSHOOT|REQUEST)[\s\S]*?(?=\n\s*\n|RFO|ACTION|CANCEL|PIC|TEAM|$)/i
@@ -115,7 +102,6 @@ function processRow(row) {
         return m ? m[0].replace(/\s+/g, " ").trim() : "";
     };
 
-    // ================= RFO + CANCEL =================
     let rfoText = extractText(/RFO\s*[:\-]?\s*([\s\S]*?)(?=\n\s*\n|ACTION|$)/i);
 
     if (/CANCEL/i.test(report)) {
@@ -127,9 +113,9 @@ function processRow(row) {
 
     // ================= STATUS =================
     let status = (row["Status"] || "").toUpperCase();
-    if (status.includes("RESCHEDULE")) status = "RESCHEDULE";
+    if (status.includes("DONE")) status = "DONE";
     else if (status.includes("CANCEL")) status = "CANCEL";
-    else if (status.includes("DONE")) status = "DONE";
+    else return; // buang RESCHEDULE & status aneh
 
     const wo = row["No Wo Klien"] || "";
     const currentDate = excelDateToJSDate(row["Datetime Receive"]);
@@ -166,17 +152,28 @@ function processRow(row) {
         "__DATE_OBJ": currentDate
     };
 
+    // ================= PRIORITY =================
     if (!reconMap[wo]) {
         reconMap[wo] = newData;
-    } else {
-        const oldDate = reconMap[wo].__DATE_OBJ;
-        if (compareDateTime(currentDate, oldDate) > 0) {
+        return;
+    }
+
+    const old = reconMap[wo];
+
+    if (old.STATUS === "DONE") return;
+    if (status === "DONE") {
+        reconMap[wo] = newData;
+        return;
+    }
+
+    if (status === "CANCEL" && old.STATUS === "CANCEL") {
+        if (compareDateTime(currentDate, old.__DATE_OBJ) > 0) {
             reconMap[wo] = newData;
         }
     }
 }
 
-// ================= RENDER TABLE =================
+// ================= RENDER =================
 function renderTable() {
     const tbody = document.querySelector("#resultTable tbody");
     tbody.innerHTML = "";
@@ -192,7 +189,7 @@ function renderTable() {
     });
 }
 
-// ================= EXPORT EXCEL =================
+// ================= EXPORT =================
 function exportExcel() {
     if (reconData.length === 0) {
         alert("Data masih kosong");
