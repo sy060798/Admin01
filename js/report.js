@@ -1,3 +1,4 @@
+let reconMap = {};
 let reconData = [];
 
 document.getElementById("upload").addEventListener("change", handleFile);
@@ -6,7 +7,7 @@ document.getElementById("upload").addEventListener("change", handleFile);
 function excelDateToJSDate(value) {
     if (!value) return "";
 
-    // === KASUS 1: Excel date serial (number) ===
+    // Excel date serial (number)
     if (typeof value === "number") {
         const utc_days = Math.floor(value - 25569);
         const utc_value = utc_days * 86400;
@@ -24,18 +25,16 @@ function excelDateToJSDate(value) {
         return date_info;
     }
 
-    // === KASUS 2: STRING (dibersihkan & diparse manual) ===
+    // String date (dibersihkan & parse manual)
     if (typeof value === "string") {
         const clean = value
-            .replace(/\u00A0/g, " ") // NBSP
+            .replace(/\u00A0/g, " ")
             .replace(/\s+/g, " ")
             .trim();
 
-        // format: yyyy-mm-dd hh:mm:ss
         const m = clean.match(
             /(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/
         );
-
         if (!m) return "";
 
         const [, y, mo, d, h, mi, s] = m.map(Number);
@@ -57,8 +56,15 @@ const getTime = d => {
     return dt.toTimeString().slice(0, 8);
 };
 
+function compareDateTime(a, b) {
+    if (!a) return -1;
+    if (!b) return 1;
+    return a.getTime() - b.getTime();
+}
+
 // ================= FILE HANDLER =================
 function handleFile(e) {
+    reconMap = {};
     reconData = [];
 
     const reader = new FileReader();
@@ -69,6 +75,12 @@ function handleFile(e) {
         const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
         rows.forEach(row => processRow(row));
+
+        reconData = Object.values(reconMap).map(r => {
+            delete r.__DATE_OBJ;
+            return r;
+        });
+
         renderTable();
     };
     reader.readAsArrayBuffer(e.target.files[0]);
@@ -119,11 +131,14 @@ function processRow(row) {
     else if (status.includes("CANCEL")) status = "CANCEL";
     else if (status.includes("DONE")) status = "DONE";
 
-    reconData.push({
+    const wo = row["No Wo Klien"] || "";
+    const currentDate = excelDateToJSDate(row["Datetime Receive"]);
+
+    const newData = {
         "ALARM DATE START": getDate(row["Datetime Receive"]),
         "ALARM TIME START": getTime(row["Datetime Receive"]),
         "CITY": row["Cabang"] || "",
-        "INSIDEN TICKET": row["No Wo Klien"] || "",
+        "INSIDEN TICKET": wo,
         "CIRCUIT ID": row["Cust ID Klien"] || "",
         "DESCRIPSI": getDescription(),
         "ADDRESS": row["Alamat"] || "",
@@ -147,8 +162,18 @@ function processRow(row) {
         "PIGTAIL": extractNumber(/Pigtail\s*[:\-]?\s*(\d+)/i),
         "PATCHCORD": extractNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
 
-        "STATUS": status
-    });
+        "STATUS": status,
+        "__DATE_OBJ": currentDate
+    };
+
+    if (!reconMap[wo]) {
+        reconMap[wo] = newData;
+    } else {
+        const oldDate = reconMap[wo].__DATE_OBJ;
+        if (compareDateTime(currentDate, oldDate) > 0) {
+            reconMap[wo] = newData;
+        }
+    }
 }
 
 // ================= RENDER TABLE =================
