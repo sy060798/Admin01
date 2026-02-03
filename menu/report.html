@@ -1,49 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Recon PT Mega Akses</title>
+    <meta charset="UTF-8">
+    <title>Report Reconcile</title>
+
+    <link rel="stylesheet" href="../style.css">
+
+    <!-- SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
-<h3>Upload Excel PT Mega Akses Persada</h3>
+<h3>📄 Report Reconcile – PT Mega Akses</h3>
+
 <input type="file" id="upload" accept=".xlsx,.xls">
-<br><br>
+<button onclick="exportExcel()">⬇ Export Excel</button>
 
-<button onclick="exportExcel()">Export Excel</button>
-
-<table border="1" id="resultTable">
-  <thead>
-    <tr>
-      <th>ALARM DATE START</th>
-      <th>ALARM TIME START</th>
-      <th>CITY</th>
-      <th>INSIDEN TICKET</th>
-      <th>CIRCUIT ID</th>
-      <th>DESCRIPSI</th>
-      <th>ADDRESS</th>
-      <th>ALARM DATE CLEAR</th>
-      <th>ALARM TIME CLEAR</th>
-      <th>RFO</th>
-      <th>ACTION</th>
-      <th>REPORTING</th>
-      <th>PRECON 50</th>
-      <th>PRECON 75</th>
-      <th>PRECON 80</th>
-      <th>PRECON 100</th>
-      <th>PRECON 150</th>
-      <th>PRECON 200</th>
-      <th>PRECON 225</th>
-      <th>PRECON 250</th>
-      <th>BAREL</th>
-      <th>PIGTAIL</th>
-      <th>PATCHCORD</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
+<table id="resultTable">
+    <thead>
+        <tr>
+            <th>ALARM DATE START</th>
+            <th>ALARM TIME START</th>
+            <th>CITY</th>
+            <th>INSIDEN TICKET</th>
+            <th>CIRCUIT ID</th>
+            <th>DESCRIPSI</th>
+            <th>ADDRESS</th>
+            <th>ALARM DATE CLEAR</th>
+            <th>ALARM TIME CLEAR</th>
+            <th>RFO</th>
+            <th>ACTION</th>
+            <th>REPORTING</th>
+            <th>PRECON 50</th>
+            <th>PRECON 75</th>
+            <th>PRECON 80</th>
+            <th>PRECON 100</th>
+            <th>PRECON 125</th>
+            <th>PRECON 150</th>
+            <th>PRECON 200</th>
+            <th>PRECON 225</th>
+            <th>PRECON 250</th>
+            <th>BAREL</th>
+            <th>PIGTAIL</th>
+            <th>PATCHCORD</th>
+            <th>STATUS</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
 </table>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="../js/report.js"></script>
 </body>
 </html>
