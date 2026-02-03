@@ -3,7 +3,7 @@ let batchIndex = 0;
 let currentBatchWO = [];
 
 // ------------------- Fungsi bantu -------------------
-// Hapus tanda * dan trim
+// Bersihkan tanda * dan trim
 function cleanData(str) {
     if (!str) return '';
     return str.replace(/\*/g, '').trim();
@@ -24,13 +24,30 @@ function getRFO(reportText) {
 document.getElementById('upload').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return alert('File tidak ditemukan!');
-    const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    excelData = XLSX.utils.sheet_to_json(worksheet);
-    batchIndex = 0;
-    alert(`Excel berhasil diupload! Total WO Klien: ${excelData.length}`);
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        excelData = XLSX.utils.sheet_to_json(worksheet);
+        batchIndex = 0;
+
+        alert(`✅ Upload Excel sukses! Total data: ${excelData.length} baris`);
+
+        // Konfirmasi data yang bisa diambil jika No WO Klien sudah diinput
+        const input = document.getElementById('ticketInput').value;
+        if (input) {
+            const woList = input.split(',').map(t => t.trim());
+            const foundWO = woList.filter(wo => 
+                excelData.some(d => (d['No Wo Klien'] || '').trim().toLowerCase() === wo.toLowerCase())
+            );
+            alert(`Data berhasil diambil untuk ${foundWO.length} dari ${woList.length} WO Klien: ${foundWO.join(', ')}`);
+        }
+
+    } catch(err) {
+        console.error(err);
+        alert('❌ Gagal membaca file Excel, pastikan format .xlsx atau .xls');
+    }
 });
 
 // ------------------- Generate Batch -------------------
