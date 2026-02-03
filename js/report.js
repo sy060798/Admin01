@@ -30,21 +30,30 @@ function processRow(row) {
         return m ? parseInt(m[0]) : 0;
     };
 
-    const extractText = r => {
-        const m = report.match(r);
-        return m ? m[1].trim() : "";
-    };
+    // ================= DESCRIPSI =================
+    const descMatch = report.match(
+        /(\[?\s*(REQUEST|TSHOOT)\s*\]?[\s\S]*?)(?=\n\s*(CANCEL|RFO|TEAM|PIC)|_{3,}|\n\s*\n)/i
+    );
+    const descripsi = descMatch
+        ? descMatch[1].replace(/\s+/g, " ").trim()
+        : "";
 
-    const extractNumber = r => {
-        const m = report.match(r);
-        return m ? parseInt(m[1]) : 0;
-    };
+    // ================= CANCEL DETECT =================
+    const cancelMatch = report.match(/^(CANCEL.*)$/im);
+    const cancelText = cancelMatch ? cancelMatch[1].trim() : "";
 
-    const rfoText = extractText(/RFO\s*[:\-]?\s*([\s\S]*?)(?:\n|$)/i);
+    // ================= RFO =================
+    let rfoText = "";
+    if (cancelText) {
+        rfoText = cancelText;
+    } else {
+        const rfoMatch = report.match(/RFO\s*[:\-]?\s*([\s\S]*?)(?:\n|$)/i);
+        rfoText = rfoMatch ? rfoMatch[1].trim() : "";
+    }
 
-    // STATUS LOGIC
+    // ================= STATUS =================
     let statusFinal = (row["Status"] || "").toString().toUpperCase();
-    if (/cancel/i.test(rfoText)) {
+    if (cancelText) {
         statusFinal = "CANCEL";
     } else if (!statusFinal) {
         statusFinal = "RESCHEDULE";
@@ -57,23 +66,21 @@ function processRow(row) {
         "INSIDEN TICKET": row["No Wo Klien"] || "",
         "CIRCUIT ID": row["Cust ID Klien"] || "",
 
-        // ✅ DESCRIPSI: TSHOOT / REQUEST (tanpa wajib kurung)
-        "DESCRIPSI": (() => {
-            const m = report.match(
-                /(TSHOOT|REQUEST)[\s\S]*?(?=\n\s*\n|_{3,}|FIELDSA|PIC|RFO|ACTION)/i
-            );
-            return m ? m[0].replace(/\s+/g, " ").trim() : "";
-        })(),
+        "DESCRIPSI": descripsi,
 
         "ADDRESS": row["Alamat"] || "",
         "ALARM DATE CLEAR": getDate(row["Updated At"]),
         "ALARM TIME CLEAR": getTime(row["Updated At"]),
 
         "RFO": rfoText,
-        "ACTION": extractText(/ACTION\s*[:\-]?\s*([^\n]+)/i),
+        "ACTION": (() => {
+            const m = report.match(/ACTION\s*[:\-]?\s*([^\n]+)/i);
+            return m ? m[1].trim() : "";
+        })(),
+
         "REPORTING": report,
 
-        // PRECON dari Excel
+        // PRECON
         "PRECON 50": getNumber(row["Kabel Precon 50 Old"]),
         "PRECON 75": getNumber(row["Kabel Precon 75 Old"]),
         "PRECON 80": getNumber(row["Kabel Precon 80 Old"]),
@@ -84,10 +91,19 @@ function processRow(row) {
         "PRECON 225": getNumber(row["Kabel Precon 225 Old"]),
         "PRECON 250": getNumber(row["Kabel Precon 250 Old"]),
 
-        // MATERIAL dari report
-        "BAREL": extractNumber(/Barrel\s*[:\-]?\s*(\d+)/i),
-        "PIGTAIL": extractNumber(/Pigtail\s*[:\-]?\s*(\d+)/i),
-        "PATCHCORD": extractNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
+        // MATERIAL
+        "BAREL": (() => {
+            const m = report.match(/Barrel\s*[:\-]?\s*(\d+)/i);
+            return m ? parseInt(m[1]) : 0;
+        })(),
+        "PIGTAIL": (() => {
+            const m = report.match(/Pigtail\s*[:\-]?\s*(\d+)/i);
+            return m ? parseInt(m[1]) : 0;
+        })(),
+        "PATCHCORD": (() => {
+            const m = report.match(/Patchcord\s*[:\-]?\s*(\d+)/i);
+            return m ? parseInt(m[1]) : 0;
+        })(),
 
         "STATUS": statusFinal
     });
