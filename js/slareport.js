@@ -26,9 +26,19 @@ function generateBatch() {
 // Next batch
 function nextBatch() {
     batchIndex += 5;
-    const nextWO = excelData.slice(batchIndex, batchIndex + 5).map(t => t['No WO Klien']);
+    const nextWO = excelData.slice(batchIndex, batchIndex + 5).map(t => t['No Wo Klien']);
     if (nextWO.length === 0) return alert('Tidak ada WO Klien berikutnya!');
     displayTickets(nextWO);
+}
+
+// Ambil RFO terakhir dari report (kata kunci)
+function getRFO(reportText) {
+    if (!reportText) return '';
+    const keywords = ['Rsch','PENDING','Cancel','TEAM VISIT','NOTE:','Status:','REQ'];
+    for (let i = keywords.length-1; i >= 0; i--) {
+        if (reportText.includes(keywords[i])) return keywords[i];
+    }
+    return '';
 }
 
 // Tampilkan tiket di tabel
@@ -37,25 +47,30 @@ function displayTickets(woList) {
     tbody.innerHTML = ''; // reset tabel
 
     woList.forEach(wo => {
-        const rowData = excelData.filter(d => d['No WO Klien'] === wo);
+        const rowData = excelData
+            .filter(d => (d['No Wo Klien'] || '').trim().toLowerCase() === wo.trim().toLowerCase())
+            .sort((a,b) => new Date(a['Validate Date']) - new Date(b['Validate Date'])); // lama → baru
+
         if (rowData.length === 0) return;
 
-        // Ambil status terakhir berdasarkan Validate Date
-        const lastStatusData = [...rowData].sort((a,b) => new Date(a['Validate Date']) - new Date(b['Validate Date'])).pop();
-
-        // Ambil HOLD / UNHOLD maksimal 5
+        // Ambil HOLD / UNHOLD maksimal 5 dari Pending / Reschedule
         const hold = [], unhold = [];
         let count = 0;
         for (let r of rowData) {
             if (count >= 5) break;
-            // skip jika status Done/Cancel
-            if (r['Status'] === 'Done' || r['Status'] === 'Cancel') continue;
-            hold.push(r['HOLD DATE'] || '');
-            unhold.push(r['UNHOLD DATE'] || '');
+            if (r['Status'] !== 'Pending' && r['Status'] !== 'Reschedule') continue; 
+            hold.push(r['Validate Date'] || '');
+            unhold.push(r['Validate Date'] || '');
             count++;
         }
 
-        // Tambahkan baris ke tabel
+        // Ambil baris Pending/Reschedule terakhir untuk RFO & Report
+        const lastPending = [...rowData].filter(r => r['Status'] === 'Pending' || r['Status'] === 'Reschedule')
+                                         .sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
+
+        // Ambil status terakhir dari baris terbaru (Validate Date terbaru)
+        const latestRow = [...rowData].sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${wo}</td>
@@ -69,9 +84,9 @@ function displayTickets(woList) {
             <td>${unhold[3]||''}</td>
             <td>${hold[4]||''}</td>
             <td>${unhold[4]||''}</td>
-            <td>${lastStatusData['RFO'] || ''}</td>
-            <td>${lastStatusData['Report'] || ''}</td>
-            <td>${lastStatusData['Status'] || ''}</td>
+            <td>${lastPending ? getRFO(lastPending['report']) : ''}</td>
+            <td>${lastPending ? lastPending['Report Installation'] || '' : ''}</td>
+            <td>${latestRow['Status'] || ''}</td>
         `;
         tbody.appendChild(tr);
     });
