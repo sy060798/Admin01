@@ -1,11 +1,6 @@
 let reconData = [];
 
-document.addEventListener("DOMContentLoaded", function () {
-    const uploadInput = document.getElementById("upload");
-    if (uploadInput) {
-        uploadInput.addEventListener("change", handleFile);
-    }
-});
+document.getElementById("upload").addEventListener("change", handleFile);
 
 function handleFile(e) {
     reconData = [];
@@ -23,28 +18,37 @@ function handleFile(e) {
     reader.readAsArrayBuffer(e.target.files[0]);
 }
 
-// ================= CORE PROCESS =================
+// ================= CORE =================
 function processRow(row) {
     const report = row["Report Installation"] || "";
 
     const getDate = d => d ? String(d).split(" ")[0] : "";
     const getTime = d => d ? String(d).split(" ")[1] : "";
 
-    const getNumber = val => {
-        if (!val) return 0;
-        const m = String(val).match(/\d+/);
+    const getNumber = v => {
+        const m = String(v).match(/\d+/);
         return m ? parseInt(m[0]) : 0;
     };
 
-    const extractReportText = (regex) => {
-        const m = report.match(regex);
+    const extractText = r => {
+        const m = report.match(r);
         return m ? m[1].trim() : "";
     };
 
-    const extractReportNumber = (regex) => {
-        const m = report.match(regex);
+    const extractNumber = r => {
+        const m = report.match(r);
         return m ? parseInt(m[1]) : 0;
     };
+
+    const rfoText = extractText(/RFO\s*[:\-]?\s*([\s\S]*?)(?:\n|$)/i);
+
+    // STATUS LOGIC
+    let statusFinal = (row["Status"] || "").toString().toUpperCase();
+    if (/cancel/i.test(rfoText)) {
+        statusFinal = "CANCEL";
+    } else if (!statusFinal) {
+        statusFinal = "RESCHEDULE";
+    }
 
     reconData.push({
         "ALARM DATE START": getDate(row["Datetime Receive"]),
@@ -62,9 +66,8 @@ function processRow(row) {
         "ALARM DATE CLEAR": getDate(row["Updated At"]),
         "ALARM TIME CLEAR": getTime(row["Updated At"]),
 
-        "RFO": extractReportText(/RFO\s*[:\-]?\s*([\s\S]*?)(?:\n|$)/i),
-        "ACTION": extractReportText(/ACTION\s*[:\-]?\s*([^\n]+)/i),
-
+        "RFO": rfoText,
+        "ACTION": extractText(/ACTION\s*[:\-]?\s*([^\n]+)/i),
         "REPORTING": report,
 
         "PRECON 50": getNumber(row["Kabel Precon 50 Old"]),
@@ -77,41 +80,38 @@ function processRow(row) {
         "PRECON 225": getNumber(row["Kabel Precon 225 Old"]),
         "PRECON 250": getNumber(row["Kabel Precon 250 Old"]),
 
-        "BAREL": extractReportNumber(/Barrel\s*[:\-]?\s*(\d+)/i),
-        "PIGTAIL": extractReportNumber(/Pigtail\s*[:\-]?\s*(\d+)/i),
-        "PATCHCORD": extractReportNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
+        "BAREL": extractNumber(/Barrel\s*[:\-]?\s*(\d+)/i),
+        "PIGTAIL": extractNumber(/Pigtail\s*[:\-]?\s*(\d+)/i),
+        "PATCHCORD": extractNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
+
+        "STATUS": statusFinal
     });
 }
 
-// ================= RENDER TABLE =================
+// ================= TABLE =================
 function renderTable() {
     const tbody = document.querySelector("#resultTable tbody");
-    if (!tbody) return;
-
     tbody.innerHTML = "";
 
     reconData.forEach(row => {
         const tr = document.createElement("tr");
-        Object.values(row).forEach(val => {
+        Object.values(row).forEach(v => {
             const td = document.createElement("td");
-            td.textContent = val;
+            td.textContent = v;
             tr.appendChild(td);
         });
         tbody.appendChild(tr);
     });
 }
 
-// ================= EXPORT EXCEL =================
+// ================= EXPORT =================
 function exportExcel() {
-    if (reconData.length === 0) {
+    if (!reconData.length) {
         alert("Data masih kosong");
         return;
     }
 
-    const ws = XLSX.utils.json_to_sheet(reconData, {
-        header: Object.keys(reconData[0])
-    });
-
+    const ws = XLSX.utils.json_to_sheet(reconData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "RECONCILE");
 
