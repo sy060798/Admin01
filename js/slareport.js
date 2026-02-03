@@ -31,20 +31,23 @@ function nextBatch() {
     displayTickets(nextWO);
 }
 
-// Ambil RFO dari report: ambil kalimat/frasa yang mengandung keyword
+// Ambil RFO dari report: hapus *, ambil fragment yang mengandung keyword
 function getRFO(reportText) {
     if (!reportText) return '';
     const keywords = ['Rsch','PENDING','Cancel','TEAM VISIT','NOTE:','Status:','REQ'];
 
-    // Pecah report menjadi fragment berdasarkan koma atau titik koma
-    const fragments = reportText.split(/[,;]/).map(f => f.trim());
+    // Hapus tanda *
+    const cleanText = reportText.replace(/\*/g, '');
 
-    // Ambil semua fragment yang mengandung keyword
+    // Pecah report menjadi fragment berdasarkan koma atau titik koma
+    const fragments = cleanText.split(/[,;]/).map(f => f.trim());
+
+    // Ambil semua fragment yang mengandung keyword (case-insensitive)
     const rfoFragments = fragments.filter(f => 
         keywords.some(kw => f.toUpperCase().includes(kw.toUpperCase()))
     );
 
-    return rfoFragments.join(', '); // gabungkan kembali dengan koma
+    return rfoFragments.join(', '); // gabungkan kembali
 }
 
 // Tampilkan tiket di tabel
