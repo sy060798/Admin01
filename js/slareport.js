@@ -31,14 +31,20 @@ function nextBatch() {
     displayTickets(nextWO);
 }
 
-// Ambil RFO terakhir dari report (kata kunci)
+// Ambil RFO dari report: ambil kalimat/frasa yang mengandung keyword
 function getRFO(reportText) {
     if (!reportText) return '';
     const keywords = ['Rsch','PENDING','Cancel','TEAM VISIT','NOTE:','Status:','REQ'];
-    for (let i = keywords.length-1; i >= 0; i--) {
-        if (reportText.includes(keywords[i])) return keywords[i];
-    }
-    return '';
+
+    // Pecah report menjadi fragment berdasarkan koma atau titik koma
+    const fragments = reportText.split(/[,;]/).map(f => f.trim());
+
+    // Ambil semua fragment yang mengandung keyword
+    const rfoFragments = fragments.filter(f => 
+        keywords.some(kw => f.toUpperCase().includes(kw.toUpperCase()))
+    );
+
+    return rfoFragments.join(', '); // gabungkan kembali dengan koma
 }
 
 // Tampilkan tiket di tabel
@@ -65,8 +71,9 @@ function displayTickets(woList) {
         }
 
         // Ambil baris Pending/Reschedule terakhir untuk RFO & Report
-        const lastPending = [...rowData].filter(r => r['Status'] === 'Pending' || r['Status'] === 'Reschedule')
-                                         .sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
+        const lastPending = [...rowData]
+            .filter(r => r['Status'] === 'Pending' || r['Status'] === 'Reschedule')
+            .sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
 
         // Ambil status terakhir dari baris terbaru (Validate Date terbaru)
         const latestRow = [...rowData].sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
