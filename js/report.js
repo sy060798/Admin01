@@ -22,6 +22,9 @@ function handleFile(e) {
 function processRow(row) {
     const report = row["Report Installation"] || "";
 
+    // 🔥 clean version (tanpa *)
+    const cleanReport = report.replace(/\*/g, "");
+
     const getDate = d => d ? String(d).split(" ")[0] : "";
     const getTime = d => d ? String(d).split(" ")[1] : "";
 
@@ -31,15 +34,15 @@ function processRow(row) {
     };
 
     // ================= DESCRIPSI =================
-    const descMatch = report.match(
-        /(\[?\s*(REQUEST|TSHOOT)\s*\]?[\s\S]*?)(?=\n\s*(CANCEL|RFO|TEAM|PIC)|_{3,}|\n\s*\n)/i
+    const descMatch = cleanReport.match(
+        /(\[?\s*(REQUEST|TSHOOT)\s*\]?[\s\S]*?)(?=\n\s*(CANCEL|RFO|ACTION|TEAM|PIC)|_{3,}|\n\s*\n)/i
     );
     const descripsi = descMatch
         ? descMatch[1].replace(/\s+/g, " ").trim()
         : "";
 
-    // ================= CANCEL DETECT =================
-    const cancelMatch = report.match(/^(CANCEL.*)$/im);
+    // ================= CANCEL =================
+    const cancelMatch = cleanReport.match(/^(CANCEL.*)$/im);
     const cancelText = cancelMatch ? cancelMatch[1].trim() : "";
 
     // ================= RFO =================
@@ -47,9 +50,15 @@ function processRow(row) {
     if (cancelText) {
         rfoText = cancelText;
     } else {
-        const rfoMatch = report.match(/RFO\s*[:\-]?\s*([\s\S]*?)(?:\n|$)/i);
+        const rfoMatch = cleanReport.match(/RFO\s*[:\-]?\s*([\s\S]*?)(?:\n|$)/i);
         rfoText = rfoMatch ? rfoMatch[1].trim() : "";
     }
+
+    // ================= ACTION =================
+    const actionMatch = cleanReport.match(/ACTION\s*[:\-]?\s*([\s\S]*?)(?=\n\s*\n|RX|SN|MATERIAL|SERVICE|$)/i);
+    const actionText = actionMatch
+        ? actionMatch[1].split("\n")[0].trim()
+        : "";
 
     // ================= STATUS =================
     let statusFinal = (row["Status"] || "").toString().toUpperCase();
@@ -73,11 +82,9 @@ function processRow(row) {
         "ALARM TIME CLEAR": getTime(row["Updated At"]),
 
         "RFO": rfoText,
-        "ACTION": (() => {
-            const m = report.match(/ACTION\s*[:\-]?\s*([^\n]+)/i);
-            return m ? m[1].trim() : "";
-        })(),
+        "ACTION": actionText,
 
+        // simpan report ASLI
         "REPORTING": report,
 
         // PRECON
@@ -93,15 +100,15 @@ function processRow(row) {
 
         // MATERIAL
         "BAREL": (() => {
-            const m = report.match(/Barrel\s*[:\-]?\s*(\d+)/i);
+            const m = cleanReport.match(/Barrel\s*[:\-]?\s*(\d+)/i);
             return m ? parseInt(m[1]) : 0;
         })(),
         "PIGTAIL": (() => {
-            const m = report.match(/Pigtail\s*[:\-]?\s*(\d+)/i);
+            const m = cleanReport.match(/Pigtail\s*[:\-]?\s*(\d+)/i);
             return m ? parseInt(m[1]) : 0;
         })(),
         "PATCHCORD": (() => {
-            const m = report.match(/Patchcord\s*[:\-]?\s*(\d+)/i);
+            const m = cleanReport.match(/Patchcord\s*[:\-]?\s*(\d+)/i);
             return m ? parseInt(m[1]) : 0;
         })(),
 
