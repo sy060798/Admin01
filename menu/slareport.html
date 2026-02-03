@@ -3,19 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <title>SLA Report – PT Mega Akses</title>
+
+    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
+
+    <!-- SheetJS CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+    <!-- JS SLA Report -->
     <script defer src="js/slareport.js"></script>
 </head>
 <body>
 
 <h2>SLA Report – PT Mega Akses</h2>
 
+<!-- Upload Excel -->
 <div>
     <label>Upload Excel PT. Mega Akses:</label>
     <input type="file" id="upload" accept=".xlsx,.xls">
 </div>
 
+<!-- Input No WO Klien -->
 <div>
     <label>Masukkan No WO Klien (max 5, pisahkan koma):</label>
     <input type="text" id="ticketInput" placeholder="Contoh: WO001,WO002">
@@ -23,10 +31,12 @@
     <button onclick="nextBatch()">Next Batch</button>
 </div>
 
+<!-- Tombol Export -->
 <div>
     <button onclick="exportExcel()">⬇ Export Excel</button>
 </div>
 
+<!-- Container untuk list horizontal -->
 <div id="resultContainer"></div>
 
 </body>
