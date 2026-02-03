@@ -31,7 +31,7 @@ function nextBatch() {
     displayTickets(nextWO);
 }
 
-// Ambil RFO dari report: hapus *, ambil fragment pertama yang cocok keyword
+// Ambil RFO dari report: hapus *, ambil fragment yang mengandung keyword (case-insensitive)
 function getRFO(reportText) {
     if (!reportText) return '';
     const keywords = ['Rsch','PENDING','Cancel','TEAM VISIT','NOTE:','Status:','REQ'];
@@ -39,10 +39,10 @@ function getRFO(reportText) {
     // Hapus tanda *
     const cleanText = reportText.replace(/\*/g, '');
 
-    // Pecah report menjadi fragment berdasarkan koma atau titik koma
-    const fragments = cleanText.split(/[,;]/).map(f => f.trim());
+    // Pecah report menjadi fragment berdasarkan koma, titik koma, atau baris baru
+    const fragments = cleanText.split(/[,;\n]/).map(f => f.trim());
 
-    // Ambil **fragment pertama** yang mengandung keyword (case-insensitive)
+    // Ambil fragment pertama yang mengandung keyword (case-insensitive)
     for (let f of fragments) {
         if (keywords.some(kw => f.toUpperCase().includes(kw.toUpperCase()))) {
             return f; // ambil hanya satu fragment
@@ -71,14 +71,19 @@ function displayTickets(woList) {
             if (count >= 5) break;
             if (r['Status'] !== 'Pending' && r['Status'] !== 'Reschedule') continue; 
             hold.push(r['Validate Date'] || '');
-            unhold.push(r['Validate Date'] || '');
+            unhold.push(r['Validate Date'] || ''); // akan diganti nanti dengan Validate Date terakhir
             count++;
         }
 
-        // Ambil baris Pending/Reschedule terakhir untuk RFO & Report
+        // Ambil baris Pending/Reschedule terakhir untuk RFO & Report & UNHOLD terakhir
         const lastPending = [...rowData]
             .filter(r => r['Status'] === 'Pending' || r['Status'] === 'Reschedule')
             .sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
+
+        // Update UNHOLD dengan Validate Date terakhir dari baris Pending/Reschedule
+        for (let i = 0; i < unhold.length; i++) {
+            if (lastPending) unhold[i] = lastPending['Validate Date'] || unhold[i];
+        }
 
         // Ambil status terakhir dari baris terbaru (Validate Date terbaru)
         const latestRow = [...rowData].sort((a,b) => new Date(b['Validate Date']) - new Date(a['Validate Date']))[0];
