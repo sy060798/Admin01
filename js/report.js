@@ -2,40 +2,58 @@ let reconData = [];
 
 document.getElementById("upload").addEventListener("change", handleFile);
 
-// ================== EXCEL DATE FIX ==================
+// ================== EXCEL DATE FIX (AKTUAL, TANPA FALLBACK) ==================
 function excelDateToJSDate(value) {
     if (!value) return "";
 
-    if (typeof value === "string") {
-        const d = new Date(value);
-        return isNaN(d) ? "" : d;
+    // === KASUS 1: Excel date serial (number) ===
+    if (typeof value === "number") {
+        const utc_days = Math.floor(value - 25569);
+        const utc_value = utc_days * 86400;
+        const date_info = new Date(utc_value * 1000);
+
+        const fractional_day = value - Math.floor(value);
+        const total_seconds = Math.floor(86400 * fractional_day);
+
+        const seconds = total_seconds % 60;
+        const total_minutes = Math.floor(total_seconds / 60);
+        const minutes = total_minutes % 60;
+        const hours = Math.floor(total_minutes / 60);
+
+        date_info.setHours(hours, minutes, seconds);
+        return date_info;
     }
 
-    const utc_days = Math.floor(value - 25569);
-    const utc_value = utc_days * 86400;
-    const date_info = new Date(utc_value * 1000);
+    // === KASUS 2: STRING (dibersihkan & diparse manual) ===
+    if (typeof value === "string") {
+        const clean = value
+            .replace(/\u00A0/g, " ") // NBSP
+            .replace(/\s+/g, " ")
+            .trim();
 
-    const fractional_day = value - Math.floor(value);
-    const total_seconds = Math.floor(86400 * fractional_day);
+        // format: yyyy-mm-dd hh:mm:ss
+        const m = clean.match(
+            /(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/
+        );
 
-    const seconds = total_seconds % 60;
-    const total_minutes = Math.floor(total_seconds / 60);
-    const minutes = total_minutes % 60;
-    const hours = Math.floor(total_minutes / 60);
+        if (!m) return "";
 
-    date_info.setHours(hours, minutes, seconds);
-    return date_info;
+        const [, y, mo, d, h, mi, s] = m.map(Number);
+        return new Date(y, mo - 1, d, h, mi, s);
+    }
+
+    return "";
 }
 
 const getDate = d => {
     const dt = excelDateToJSDate(d);
-    if (!dt) return "";
+    if (!dt || isNaN(dt)) return "";
     return dt.toISOString().slice(0, 10);
 };
 
 const getTime = d => {
     const dt = excelDateToJSDate(d);
-    if (!dt) return "";
+    if (!dt || isNaN(dt)) return "";
     return dt.toTimeString().slice(0, 8);
 };
 
@@ -59,7 +77,7 @@ function handleFile(e) {
 // ================= CORE PROCESS =================
 function processRow(row) {
     let report = row["Report Installation"] || "";
-    report = report.replace(/\*/g, ""); // 🔥 abaikan tanda *
+    report = report.replace(/\*/g, ""); // abaikan tanda *
 
     const getNumber = val => {
         if (!val) return 0;
@@ -67,21 +85,21 @@ function processRow(row) {
         return m ? parseInt(m[0]) : 0;
     };
 
-    const extractText = (regex) => {
+    const extractText = regex => {
         const m = report.match(regex);
         return m ? m[1].trim() : "";
     };
 
-    const extractNumber = (regex) => {
+    const extractNumber = regex => {
         const m = report.match(regex);
         return m ? parseInt(m[1]) : 0;
     };
 
-    // ================= DESCRIPSI (TSHOOT / REQUEST / TANPA KURUNG) =================
+    // ================= DESCRIPSI =================
     const getDescription = () => {
-        const regex =
-            /(TSHOOT|REQUEST)[\s\S]*?(?=\n\s*\n|RFO|ACTION|CANCEL|PIC|TEAM|$)/i;
-        const m = report.match(regex);
+        const m = report.match(
+            /(TSHOOT|REQUEST)[\s\S]*?(?=\n\s*\n|RFO|ACTION|CANCEL|PIC|TEAM|$)/i
+        );
         return m ? m[0].replace(/\s+/g, " ").trim() : "";
     };
 
@@ -97,7 +115,6 @@ function processRow(row) {
 
     // ================= STATUS =================
     let status = (row["Status"] || "").toUpperCase();
-
     if (status.includes("RESCHEDULE")) status = "RESCHEDULE";
     else if (status.includes("CANCEL")) status = "CANCEL";
     else if (status.includes("DONE")) status = "DONE";
@@ -116,7 +133,6 @@ function processRow(row) {
         "ACTION": extractText(/ACTION\s*[:\-]?\s*([\s\S]*?)(?=\n\s*\n|$)/i),
         "REPORTING": report,
 
-        // ===== PRECON (DARI EXCEL PT MEGA AKSES) =====
         "PRECON 50": getNumber(row["Kabel Precon 50 Old"]),
         "PRECON 75": getNumber(row["Kabel Precon 75 Old"]),
         "PRECON 80": getNumber(row["Kabel Precon 80 Old"]),
@@ -127,7 +143,6 @@ function processRow(row) {
         "PRECON 225": getNumber(row["Kabel Precon 225 Old"]),
         "PRECON 250": getNumber(row["Kabel Precon 250 Old"]),
 
-        // ===== MATERIAL =====
         "BAREL": extractNumber(/Barrel\s*[:\-]?\s*(\d+)/i),
         "PIGTAIL": extractNumber(/Pigtail\s*[:\-]?\s*(\d+)/i),
         "PATCHCORD": extractNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
@@ -165,6 +180,5 @@ function exportExcel() {
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "RECONCILE");
-
     XLSX.writeFile(wb, "RECON_MEGA_AKSES.xlsx");
 }
