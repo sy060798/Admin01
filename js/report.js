@@ -1,6 +1,11 @@
 let reconData = [];
 
-document.getElementById("upload").addEventListener("change", handleFile);
+document.addEventListener("DOMContentLoaded", function () {
+    const uploadInput = document.getElementById("upload");
+    if (uploadInput) {
+        uploadInput.addEventListener("change", handleFile);
+    }
+});
 
 function handleFile(e) {
     reconData = [];
@@ -48,7 +53,6 @@ function processRow(row) {
         "INSIDEN TICKET": row["No Wo Klien"] || "",
         "CIRCUIT ID": row["Cust ID Klien"] || "",
 
-        // ✅ DESCRIPSI: hanya bagian atas CIR
         "DESCRIPSI": (() => {
             const m = report.match(/\[TSHOOT\][\s\S]*?(?=\n\s*\n|_{3,}|FIELDSA|PIC|RFO)/i);
             return m ? m[0].replace(/\s+/g, " ").trim() : "";
@@ -58,13 +62,11 @@ function processRow(row) {
         "ALARM DATE CLEAR": getDate(row["Updated At"]),
         "ALARM TIME CLEAR": getTime(row["Updated At"]),
 
-        // 🔴 RFO & ACTION dari Report Installation
         "RFO": extractReportText(/RFO\s*[:\-]?\s*([\s\S]*?)(?:\n|$)/i),
         "ACTION": extractReportText(/ACTION\s*[:\-]?\s*([^\n]+)/i),
 
         "REPORTING": report,
 
-        // 🟢 PRECON langsung dari Excel PT Mega Akses
         "PRECON 50": getNumber(row["Kabel Precon 50 Old"]),
         "PRECON 75": getNumber(row["Kabel Precon 75 Old"]),
         "PRECON 80": getNumber(row["Kabel Precon 80 Old"]),
@@ -75,7 +77,6 @@ function processRow(row) {
         "PRECON 225": getNumber(row["Kabel Precon 225 Old"]),
         "PRECON 250": getNumber(row["Kabel Precon 250 Old"]),
 
-        // 🟡 MATERIAL dari Report Installation
         "BAREL": extractReportNumber(/Barrel\s*[:\-]?\s*(\d+)/i),
         "PIGTAIL": extractReportNumber(/Pigtail\s*[:\-]?\s*(\d+)/i),
         "PATCHCORD": extractReportNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
@@ -85,6 +86,8 @@ function processRow(row) {
 // ================= RENDER TABLE =================
 function renderTable() {
     const tbody = document.querySelector("#resultTable tbody");
+    if (!tbody) return;
+
     tbody.innerHTML = "";
 
     reconData.forEach(row => {
