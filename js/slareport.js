@@ -12,35 +12,35 @@ document.getElementById('upload').addEventListener('change', async (e) => {
     const worksheet = workbook.Sheets[sheetName];
     excelData = XLSX.utils.sheet_to_json(worksheet);
     batchIndex = 0;
-    alert('Excel berhasil diupload! Total tiket: ' + excelData.length);
+    alert('Excel berhasil diupload! Total WO Klien: ' + excelData.length);
 });
 
-// Generate batch 5 tiket
+// Generate batch 5 WO Klien
 function generateBatch() {
     const input = document.getElementById('ticketInput').value;
-    if (!input) return alert('Masukkan Ticket ID terlebih dahulu!');
-    const tickets = input.split(',').map(t => t.trim()).slice(0,5);
-    displayTickets(tickets);
+    if (!input) return alert('Masukkan No WO Klien terlebih dahulu!');
+    const woList = input.split(',').map(t => t.trim()).slice(0,5); // max 5
+    displayTickets(woList);
 }
 
 // Next batch
 function nextBatch() {
     batchIndex += 5;
-    const nextTickets = excelData.slice(batchIndex, batchIndex + 5).map(t => t['Ticket ID']);
-    if (nextTickets.length === 0) return alert('Tidak ada tiket berikutnya!');
-    displayTickets(nextTickets);
+    const nextWO = excelData.slice(batchIndex, batchIndex + 5).map(t => t['No WO Klien']);
+    if (nextWO.length === 0) return alert('Tidak ada WO Klien berikutnya!');
+    displayTickets(nextWO);
 }
 
 // Tampilkan tiket di tabel
-function displayTickets(tickets) {
+function displayTickets(woList) {
     const tbody = document.querySelector('#resultTable tbody');
     tbody.innerHTML = ''; // reset tabel
 
-    tickets.forEach(ticketID => {
-        const rowData = excelData.filter(d => d['Ticket ID'] === ticketID);
+    woList.forEach(wo => {
+        const rowData = excelData.filter(d => d['No WO Klien'] === wo);
         if (rowData.length === 0) return;
 
-        // Ambil status terakhir
+        // Ambil status terakhir berdasarkan Validate Date
         const lastStatusData = [...rowData].sort((a,b) => new Date(a['Validate Date']) - new Date(b['Validate Date'])).pop();
 
         // Ambil HOLD / UNHOLD maksimal 5
@@ -58,7 +58,7 @@ function displayTickets(tickets) {
         // Tambahkan baris ke tabel
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${ticketID}</td>
+            <td>${wo}</td>
             <td>${hold[0]||''}</td>
             <td>${unhold[0]||''}</td>
             <td>${hold[1]||''}</td>
