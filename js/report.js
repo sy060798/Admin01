@@ -25,11 +25,8 @@ function excelDateToJSDate(value) {
     }
 
     if (typeof value === "string") {
-        const m = value.match(
-            /(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/
-        );
-        if (!m) return "";
-        return new Date(m[1], m[2] - 1, m[3], m[4], m[5], m[6]);
+        const d = new Date(value);
+        return isNaN(d) ? "" : d;
     }
 
     return "";
@@ -71,12 +68,12 @@ function handleFile(e) {
 
 // ================= CORE PROCESS =================
 function processRow(row) {
-    let statusRaw = (row["Status"] || "").toUpperCase();
+    const statusRaw = (row["Status"] || "").toUpperCase();
     let status = "";
 
     if (statusRaw.includes("DONE")) status = "DONE";
     else if (statusRaw.includes("CANCEL")) status = "CANCEL BTN";
-    else return; // ⛔ status lain DIABAIKAN
+    else return; // ⛔ selain DONE & CANCEL diabaikan
 
     const wo = row["No Wo Klien"];
     if (!wo) return;
@@ -88,6 +85,22 @@ function processRow(row) {
         return m ? m[1].trim() : "";
     };
 
+    const extractNumber = regex => {
+        const m = report.match(regex);
+        return m ? parseInt(m[1]) : 0;
+    };
+
+    const getNumber = v => {
+        if (!v) return 0;
+        const m = String(v).match(/\d+/);
+        return m ? parseInt(m[0]) : 0;
+    };
+
+    // ===== DESCRIPSI =====
+    const deskripsi =
+        extractText(/(TSHOOT|REQUEST)[\s\S]*?(?=\n\s*\n|RFO|ACTION|CANCEL|$)/i);
+
+    // ===== RFO + CANCEL =====
     let rfoText = extractText(/RFO\s*[:\-]?\s*([\s\S]*?)(?=\n\s*\n|ACTION|$)/i);
     if (status === "CANCEL BTN") {
         const c = report.match(/CANCEL[^\n]*/i);
@@ -102,22 +115,39 @@ function processRow(row) {
         "CITY": row["Cabang"] || "",
         "INSIDEN TICKET": wo,
         "CIRCUIT ID": row["Cust ID Klien"] || "",
-        "DESCRIPSI": extractText(
-            /(TSHOOT|REQUEST)[\s\S]*?(?=\n\s*\n|RFO|ACTION|CANCEL|$)/i
-        ),
+        "DESCRIPSI": deskripsi,
         "ADDRESS": row["Alamat"] || "",
         "ALARM DATE CLEAR": getDate(row["Updated At"]),
         "ALARM TIME CLEAR": getTime(row["Updated At"]),
         "RFO": rfoText,
         "ACTION": extractText(/ACTION\s*[:\-]?\s*([\s\S]*?)(?=\n\s*\n|$)/i),
         "REPORTING": report,
+
+        // ===== PRECON (EXCEL PT MEGA AKSES) =====
+        "PRECON 50": getNumber(row["Kabel Precon 50 Old"]),
+        "PRECON 75": getNumber(row["Kabel Precon 75 Old"]),
+        "PRECON 80": getNumber(row["Kabel Precon 80 Old"]),
+        "PRECON 100": getNumber(row["Kabel Precon 100 Old"]),
+        "PRECON 125": getNumber(row["Kabel Precon 125 Old"]),
+        "PRECON 150": getNumber(row["Kabel Precon 150 Old"]),
+        "PRECON 200": getNumber(row["Kabel Precon 200 Old"]),
+        "PRECON 225": getNumber(row["Kabel Precon 225 Old"]),
+        "PRECON 250": getNumber(row["Kabel Precon 250 Old"]),
+
+        // ===== MATERIAL (REPORT) =====
+        "BAREL": extractNumber(/Barrel\s*[:\-]?\s*(\d+)/i),
+        "PIGTAIL": extractNumber(/Pigtail\s*[:\-]?\s*(\d+)/i),
+        "PATCHCORD": extractNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
+
         "STATUS": status,
+
         "__META": {
             status,
             recvDate
         }
     };
 
+    // ===== FILTER WO DOUBLE =====
     if (!reconMap[wo]) {
         reconMap[wo] = newRow;
         return;
@@ -125,16 +155,15 @@ function processRow(row) {
 
     const old = reconMap[wo].__META;
 
-    // ===== PRIORITAS STATUS =====
+    // DONE selalu menang
     if (old.status === "CANCEL BTN" && status === "DONE") {
         reconMap[wo] = newRow;
         return;
     }
 
-    if (old.status === status) {
-        if (recvDate > old.recvDate) {
-            reconMap[wo] = newRow;
-        }
+    // status sama → ambil Datetime Receive terbaru
+    if (old.status === status && recvDate > old.recvDate) {
+        reconMap[wo] = newRow;
     }
 }
 
