@@ -14,8 +14,13 @@
 
 <h2>SLA Report – PT Mega Akses</h2>
 
-<input type="file" id="upload" accept=".xlsx,.xls">
+<!-- Upload Excel -->
+<div>
+    <label>Upload Excel PT. Mega Akses:</label>
+    <input type="file" id="upload" accept=".xlsx,.xls">
+</div>
 
+<!-- Masukkan No WO Klien -->
 <div>
     <label>Masukkan No WO Klien (max 5, pisahkan koma):</label>
     <input type="text" id="ticketInput" placeholder="Contoh: WO001,WO002">
@@ -23,9 +28,12 @@
     <button onclick="nextBatch()">Next Batch</button>
 </div>
 
-<button onclick="exportExcel()">⬇ Export Excel</button>
+<!-- Tombol Export -->
+<div>
+    <button onclick="exportExcel()">⬇ Export Excel</button>
+</div>
 
-<!-- Container untuk list horizontal -->
+<!-- Container untuk list horizontal per batch -->
 <div id="resultContainer"></div>
 
 </body>
