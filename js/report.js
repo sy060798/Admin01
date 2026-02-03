@@ -15,39 +15,39 @@ function excelDateToJSDate(value) {
         const fractional_day = value - Math.floor(value);
         const total_seconds = Math.floor(86400 * fractional_day);
 
-        const seconds = total_seconds % 60;
-        const total_minutes = Math.floor(total_seconds / 60);
-        const minutes = total_minutes % 60;
-        const hours = Math.floor(total_minutes / 60);
-
-        date_info.setHours(hours, minutes, seconds);
+        date_info.setHours(
+            Math.floor(total_seconds / 3600),
+            Math.floor((total_seconds % 3600) / 60),
+            total_seconds % 60
+        );
         return date_info;
     }
 
     if (typeof value === "string") {
-        const clean = value.replace(/\u00A0/g, " ").replace(/\s+/g, " ").trim();
+        const clean = value.replace(/\u00A0/g, " ").trim();
         const m = clean.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/);
         if (!m) return "";
         const [, y, mo, d, h, mi, s] = m.map(Number);
         return new Date(y, mo - 1, d, h, mi, s);
     }
+
     return "";
 }
 
 const getDate = d => {
     const dt = excelDateToJSDate(d);
-    return dt && !isNaN(dt) ? dt.toISOString().slice(0, 10) : "";
+    return dt ? dt.toISOString().slice(0, 10) : "";
 };
 
 const getTime = d => {
     const dt = excelDateToJSDate(d);
-    return dt && !isNaN(dt) ? dt.toTimeString().slice(0, 8) : "";
+    return dt ? dt.toTimeString().slice(0, 8) : "";
 };
 
-function compareDateTime(a, b) {
-    if (!a) return -1;
-    if (!b) return 1;
-    return a.getTime() - b.getTime();
+function isNewer(a, b) {
+    if (!a) return false;
+    if (!b) return true;
+    return a.getTime() > b.getTime();
 }
 
 // ================= FILE HANDLER =================
@@ -76,22 +76,20 @@ function handleFile(e) {
 
 // ================= CORE PROCESS =================
 function processRow(row) {
-    let report = row["Report Installation"] || "";
-    report = report.replace(/\*/g, "");
+    let report = (row["Report Installation"] || "").replace(/\*/g, "");
 
-    const getNumber = val => {
-        if (!val) return 0;
-        const m = String(val).match(/\d+/);
+    const getNumber = v => {
+        const m = String(v || "").match(/\d+/);
         return m ? parseInt(m[0]) : 0;
     };
 
-    const extractText = regex => {
-        const m = report.match(regex);
+    const extractText = r => {
+        const m = report.match(r);
         return m ? m[1].trim() : "";
     };
 
-    const extractNumber = regex => {
-        const m = report.match(regex);
+    const extractNumber = r => {
+        const m = report.match(r);
         return m ? parseInt(m[1]) : 0;
     };
 
@@ -103,22 +101,21 @@ function processRow(row) {
     };
 
     let rfoText = extractText(/RFO\s*[:\-]?\s*([\s\S]*?)(?=\n\s*\n|ACTION|$)/i);
-
     if (/CANCEL/i.test(report)) {
-        const cancelLine = report.match(/CANCEL[^\n]*/i);
-        if (cancelLine) {
-            rfoText = (rfoText ? rfoText + " | " : "") + cancelLine[0].trim();
-        }
+        const c = report.match(/CANCEL[^\n]*/i);
+        if (c) rfoText = (rfoText ? rfoText + " | " : "") + c[0];
     }
 
     // ================= STATUS =================
-    let status = (row["Status"] || "").toUpperCase();
-    if (status.includes("DONE")) status = "DONE";
-    else if (status.includes("CANCEL")) status = "CANCEL";
-    else return; // buang RESCHEDULE & status aneh
+    const rawStatus = (row["Status"] || "").toUpperCase();
+    let status = "";
 
-    const wo = row["No Wo Klien"] || "";
-    const currentDate = excelDateToJSDate(row["Datetime Receive"]);
+    if (rawStatus.includes("DONE")) status = "DONE";
+    else if (rawStatus.includes("BTN")) status = "BTN";
+    else return; // buang RESCHEDULE & aneh
+
+    const wo = row["No Wo Klien"];
+    const dtReceive = excelDateToJSDate(row["Datetime Receive"]);
 
     const newData = {
         "ALARM DATE START": getDate(row["Datetime Receive"]),
@@ -149,10 +146,10 @@ function processRow(row) {
         "PATCHCORD": extractNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
 
         "STATUS": status,
-        "__DATE_OBJ": currentDate
+        "__DATE_OBJ": dtReceive
     };
 
-    // ================= PRIORITY =================
+    // ================= PRIORITY LOGIC =================
     if (!reconMap[wo]) {
         reconMap[wo] = newData;
         return;
@@ -160,16 +157,21 @@ function processRow(row) {
 
     const old = reconMap[wo];
 
-    if (old.STATUS === "DONE") return;
-    if (status === "DONE") {
+    // DONE selalu menang
+    if (old.STATUS !== "DONE" && status === "DONE") {
         reconMap[wo] = newData;
         return;
     }
 
-    if (status === "CANCEL" && old.STATUS === "CANCEL") {
-        if (compareDateTime(currentDate, old.__DATE_OBJ) > 0) {
-            reconMap[wo] = newData;
-        }
+    // DONE vs DONE → ambil terbaru
+    if (old.STATUS === "DONE" && status === "DONE") {
+        if (isNewer(dtReceive, old.__DATE_OBJ)) reconMap[wo] = newData;
+        return;
+    }
+
+    // BTN vs BTN → ambil terbaru
+    if (old.STATUS === "BTN" && status === "BTN") {
+        if (isNewer(dtReceive, old.__DATE_OBJ)) reconMap[wo] = newData;
     }
 }
 
@@ -191,10 +193,7 @@ function renderTable() {
 
 // ================= EXPORT =================
 function exportExcel() {
-    if (reconData.length === 0) {
-        alert("Data masih kosong");
-        return;
-    }
+    if (!reconData.length) return alert("Data masih kosong");
 
     const ws = XLSX.utils.json_to_sheet(reconData, {
         header: Object.keys(reconData[0])
