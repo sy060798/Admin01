@@ -57,8 +57,11 @@ function processRow(row) {
         "INSIDEN TICKET": row["No Wo Klien"] || "",
         "CIRCUIT ID": row["Cust ID Klien"] || "",
 
+        // ✅ DESCRIPSI: TSHOOT / REQUEST (tanpa wajib kurung)
         "DESCRIPSI": (() => {
-            const m = report.match(/\[TSHOOT\][\s\S]*?(?=\n\s*\n|_{3,}|FIELDSA|PIC|RFO)/i);
+            const m = report.match(
+                /(TSHOOT|REQUEST)[\s\S]*?(?=\n\s*\n|_{3,}|FIELDSA|PIC|RFO|ACTION)/i
+            );
             return m ? m[0].replace(/\s+/g, " ").trim() : "";
         })(),
 
@@ -70,6 +73,7 @@ function processRow(row) {
         "ACTION": extractText(/ACTION\s*[:\-]?\s*([^\n]+)/i),
         "REPORTING": report,
 
+        // PRECON dari Excel
         "PRECON 50": getNumber(row["Kabel Precon 50 Old"]),
         "PRECON 75": getNumber(row["Kabel Precon 75 Old"]),
         "PRECON 80": getNumber(row["Kabel Precon 80 Old"]),
@@ -80,6 +84,7 @@ function processRow(row) {
         "PRECON 225": getNumber(row["Kabel Precon 225 Old"]),
         "PRECON 250": getNumber(row["Kabel Precon 250 Old"]),
 
+        // MATERIAL dari report
         "BAREL": extractNumber(/Barrel\s*[:\-]?\s*(\d+)/i),
         "PIGTAIL": extractNumber(/Pigtail\s*[:\-]?\s*(\d+)/i),
         "PATCHCORD": extractNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
