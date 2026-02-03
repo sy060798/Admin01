@@ -14,17 +14,17 @@
 <body>
     <h3>📊 SLA Report – PT Mega Akses</h3>
 
-    <!-- Upload Excel --->
+    <!-- Upload Excel -->
     <input type="file" id="upload" accept=".xlsx,.xls">
 
-    <!-- Input batch tiket -->
+    <!-- Input batch WO Klien -->
     <div>
-        <label>Masukkan Ticket ID (max 5, pisahkan koma):</label>
-        <input type="text" id="ticketInput" placeholder="Contoh: T001,T002,T003">
+        <label>Masukkan No WO Klien (max 5, pisahkan koma):</label>
+        <input type="text" id="ticketInput" placeholder="Contoh: WO001,WO002">
         <button onclick="generateBatch()">Generate Batch</button>
     </div>
 
-    <!-- Tombol export -->
+    <!-- Tombol export & next batch -->
     <button onclick="exportExcel()">⬇ Export Excel</button>
     <button onclick="nextBatch()">➡ Next Batch</button>
 
@@ -32,7 +32,7 @@
     <table id="resultTable">
         <thead>
             <tr>
-                <th>Ticket ID</th>
+                <th>No WO Klien</th>
                 <th>HOLD DATE 1</th>
                 <th>UNHOLD DATE 1</th>
                 <th>HOLD DATE 2</th>
