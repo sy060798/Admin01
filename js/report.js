@@ -106,16 +106,20 @@ function processRow(row) {
         if (c) rfoText = (rfoText ? rfoText + " | " : "") + c[0];
     }
 
-    // ================= STATUS =================
     const rawStatus = (row["Status"] || "").toUpperCase();
     let status = "";
 
     if (rawStatus.includes("DONE")) status = "DONE";
     else if (rawStatus.includes("BTN")) status = "BTN";
-    else return; // buang RESCHEDULE & aneh
+    else return;
 
     const wo = row["No Wo Klien"];
     const dtReceive = excelDateToJSDate(row["Datetime Receive"]);
+
+    // 🔥 CLEAR DATETIME DIGABUNG
+    const clearDate = getDate(row["Updated At"]);
+    const clearTime = getTime(row["Updated At"]);
+    const clearDateTime = clearDate && clearTime ? `${clearDate} ${clearTime}` : "";
 
     const newData = {
         "ALARM DATE START": getDate(row["Datetime Receive"]),
@@ -125,8 +129,11 @@ function processRow(row) {
         "CIRCUIT ID": row["Cust ID Klien"] || "",
         "DESCRIPSI": getDescription(),
         "ADDRESS": row["Alamat"] || "",
-        "ALARM DATE CLEAR": getDate(row["Updated At"]),
-        "ALARM TIME CLEAR": getTime(row["Updated At"]),
+
+        // ✅ DIGABUNG
+        "ALARM DATE CLEAR": clearDateTime,
+        "ALARM TIME CLEAR": "",
+
         "RFO": rfoText,
         "ACTION": extractText(/ACTION\s*[:\-]?\s*([\s\S]*?)(?=\n\s*\n|$)/i),
         "REPORTING": report,
@@ -149,7 +156,6 @@ function processRow(row) {
         "__DATE_OBJ": dtReceive
     };
 
-    // ================= PRIORITY LOGIC =================
     if (!reconMap[wo]) {
         reconMap[wo] = newData;
         return;
@@ -157,19 +163,16 @@ function processRow(row) {
 
     const old = reconMap[wo];
 
-    // DONE selalu menang
     if (old.STATUS !== "DONE" && status === "DONE") {
         reconMap[wo] = newData;
         return;
     }
 
-    // DONE vs DONE → ambil terbaru
     if (old.STATUS === "DONE" && status === "DONE") {
         if (isNewer(dtReceive, old.__DATE_OBJ)) reconMap[wo] = newData;
         return;
     }
 
-    // BTN vs BTN → ambil terbaru
     if (old.STATUS === "BTN" && status === "BTN") {
         if (isNewer(dtReceive, old.__DATE_OBJ)) reconMap[wo] = newData;
     }
