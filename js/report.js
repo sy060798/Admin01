@@ -44,6 +44,23 @@ const getTime = d => {
     return dt ? dt.toTimeString().slice(0, 8) : "";
 };
 
+// ================= FORMAT CLEAR DATE =================
+function formatDateClear(dt) {
+    if (!dt || isNaN(dt)) return "";
+
+    const months = ["jan","feb","mar","apr","mei","jun","jul","agu","sep","okt","nov","des"];
+
+    const d = dt.getDate().toString().padStart(2, "0");
+    const m = months[dt.getMonth()];
+    const y = dt.getFullYear();
+
+    const h = dt.getHours().toString().padStart(2, "0");
+    const mi = dt.getMinutes().toString().padStart(2, "0");
+    const s = dt.getSeconds().toString().padStart(2, "0");
+
+    return `${d}-${m}-${y} ${h}:${mi}:${s}`;
+}
+
 function isNewer(a, b) {
     if (!a) return false;
     if (!b) return true;
@@ -116,10 +133,10 @@ function processRow(row) {
     const wo = row["No Wo Klien"];
     const dtReceive = excelDateToJSDate(row["Datetime Receive"]);
 
-    // 🔥 CLEAR DATETIME DIGABUNG
-    const clearDate = getDate(row["Updated At"]);
-    const clearTime = getTime(row["Updated At"]);
-    const clearDateTime = clearDate && clearTime ? `${clearDate} ${clearTime}` : "";
+    // ✅ FORMAT CLEAR DATE (REVISI TERAKHIR)
+    const clearDateTime = formatDateClear(
+        excelDateToJSDate(row["Updated At"])
+    );
 
     const newData = {
         "ALARM DATE START": getDate(row["Datetime Receive"]),
@@ -130,7 +147,6 @@ function processRow(row) {
         "DESCRIPSI": getDescription(),
         "ADDRESS": row["Alamat"] || "",
 
-        // ✅ DIGABUNG
         "ALARM DATE CLEAR": clearDateTime,
         "ALARM TIME CLEAR": "",
 
