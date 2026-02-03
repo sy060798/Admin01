@@ -3,10 +3,11 @@ let reconData = [];
 
 document.getElementById("upload").addEventListener("change", handleFile);
 
-// ================== EXCEL DATE FIX ==================
+// ================== EXCEL DATE FIX (AKTUAL, TANPA FALLBACK) ==================
 function excelDateToJSDate(value) {
     if (!value) return "";
 
+    // Excel date serial (number)
     if (typeof value === "number") {
         const utc_days = Math.floor(value - 25569);
         const utc_value = utc_days * 86400;
@@ -24,9 +25,20 @@ function excelDateToJSDate(value) {
         return date_info;
     }
 
+    // String date (dibersihkan & parse manual)
     if (typeof value === "string") {
-        const d = new Date(value);
-        return isNaN(d) ? "" : d;
+        const clean = value
+            .replace(/\u00A0/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const m = clean.match(
+            /(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/
+        );
+        if (!m) return "";
+
+        const [, y, mo, d, h, mi, s] = m.map(Number);
+        return new Date(y, mo - 1, d, h, mi, s);
     }
 
     return "";
@@ -34,13 +46,21 @@ function excelDateToJSDate(value) {
 
 const getDate = d => {
     const dt = excelDateToJSDate(d);
-    return dt ? dt.toISOString().slice(0, 10) : "";
+    if (!dt || isNaN(dt)) return "";
+    return dt.toISOString().slice(0, 10);
 };
 
 const getTime = d => {
     const dt = excelDateToJSDate(d);
-    return dt ? dt.toTimeString().slice(0, 8) : "";
+    if (!dt || isNaN(dt)) return "";
+    return dt.toTimeString().slice(0, 8);
 };
+
+function compareDateTime(a, b) {
+    if (!a) return -1;
+    if (!b) return 1;
+    return a.getTime() - b.getTime();
+}
 
 // ================= FILE HANDLER =================
 function handleFile(e) {
@@ -57,7 +77,7 @@ function handleFile(e) {
         rows.forEach(row => processRow(row));
 
         reconData = Object.values(reconMap).map(r => {
-            delete r.__META;
+            delete r.__DATE_OBJ;
             return r;
         });
 
@@ -68,17 +88,14 @@ function handleFile(e) {
 
 // ================= CORE PROCESS =================
 function processRow(row) {
-    const statusRaw = (row["Status"] || "").toUpperCase();
-    let status = "";
+    let report = row["Report Installation"] || "";
+    report = report.replace(/\*/g, ""); // abaikan tanda *
 
-    if (statusRaw.includes("DONE")) status = "DONE";
-    else if (statusRaw.includes("CANCEL")) status = "CANCEL BTN";
-    else return; // ⛔ selain DONE & CANCEL diabaikan
-
-    const wo = row["No Wo Klien"];
-    if (!wo) return;
-
-    let report = (row["Report Installation"] || "").replace(/\*/g, "");
+    const getNumber = val => {
+        if (!val) return 0;
+        const m = String(val).match(/\d+/);
+        return m ? parseInt(m[0]) : 0;
+    };
 
     const extractText = regex => {
         const m = report.match(regex);
@@ -90,32 +107,40 @@ function processRow(row) {
         return m ? parseInt(m[1]) : 0;
     };
 
-    const getNumber = v => {
-        if (!v) return 0;
-        const m = String(v).match(/\d+/);
-        return m ? parseInt(m[0]) : 0;
+    // ================= DESCRIPSI =================
+    const getDescription = () => {
+        const m = report.match(
+            /(TSHOOT|REQUEST)[\s\S]*?(?=\n\s*\n|RFO|ACTION|CANCEL|PIC|TEAM|$)/i
+        );
+        return m ? m[0].replace(/\s+/g, " ").trim() : "";
     };
 
-    // ===== DESCRIPSI =====
-    const deskripsi =
-        extractText(/(TSHOOT|REQUEST)[\s\S]*?(?=\n\s*\n|RFO|ACTION|CANCEL|$)/i);
-
-    // ===== RFO + CANCEL =====
+    // ================= RFO + CANCEL =================
     let rfoText = extractText(/RFO\s*[:\-]?\s*([\s\S]*?)(?=\n\s*\n|ACTION|$)/i);
-    if (status === "CANCEL BTN") {
-        const c = report.match(/CANCEL[^\n]*/i);
-        if (c) rfoText = (rfoText ? rfoText + " | " : "") + c[0];
+
+    if (/CANCEL/i.test(report)) {
+        const cancelLine = report.match(/CANCEL[^\n]*/i);
+        if (cancelLine) {
+            rfoText = (rfoText ? rfoText + " | " : "") + cancelLine[0].trim();
+        }
     }
 
-    const recvDate = excelDateToJSDate(row["Datetime Receive"]);
+    // ================= STATUS =================
+    let status = (row["Status"] || "").toUpperCase();
+    if (status.includes("RESCHEDULE")) status = "RESCHEDULE";
+    else if (status.includes("CANCEL")) status = "CANCEL";
+    else if (status.includes("DONE")) status = "DONE";
 
-    const newRow = {
+    const wo = row["No Wo Klien"] || "";
+    const currentDate = excelDateToJSDate(row["Datetime Receive"]);
+
+    const newData = {
         "ALARM DATE START": getDate(row["Datetime Receive"]),
         "ALARM TIME START": getTime(row["Datetime Receive"]),
         "CITY": row["Cabang"] || "",
         "INSIDEN TICKET": wo,
         "CIRCUIT ID": row["Cust ID Klien"] || "",
-        "DESCRIPSI": deskripsi,
+        "DESCRIPSI": getDescription(),
         "ADDRESS": row["Alamat"] || "",
         "ALARM DATE CLEAR": getDate(row["Updated At"]),
         "ALARM TIME CLEAR": getTime(row["Updated At"]),
@@ -123,7 +148,6 @@ function processRow(row) {
         "ACTION": extractText(/ACTION\s*[:\-]?\s*([\s\S]*?)(?=\n\s*\n|$)/i),
         "REPORTING": report,
 
-        // ===== PRECON (EXCEL PT MEGA AKSES) =====
         "PRECON 50": getNumber(row["Kabel Precon 50 Old"]),
         "PRECON 75": getNumber(row["Kabel Precon 75 Old"]),
         "PRECON 80": getNumber(row["Kabel Precon 80 Old"]),
@@ -134,63 +158,51 @@ function processRow(row) {
         "PRECON 225": getNumber(row["Kabel Precon 225 Old"]),
         "PRECON 250": getNumber(row["Kabel Precon 250 Old"]),
 
-        // ===== MATERIAL (REPORT) =====
         "BAREL": extractNumber(/Barrel\s*[:\-]?\s*(\d+)/i),
         "PIGTAIL": extractNumber(/Pigtail\s*[:\-]?\s*(\d+)/i),
         "PATCHCORD": extractNumber(/Patchcord\s*[:\-]?\s*(\d+)/i),
 
         "STATUS": status,
-
-        "__META": {
-            status,
-            recvDate
-        }
+        "__DATE_OBJ": currentDate
     };
 
-    // ===== FILTER WO DOUBLE =====
     if (!reconMap[wo]) {
-        reconMap[wo] = newRow;
-        return;
-    }
-
-    const old = reconMap[wo].__META;
-
-    // DONE selalu menang
-    if (old.status === "CANCEL BTN" && status === "DONE") {
-        reconMap[wo] = newRow;
-        return;
-    }
-
-    // status sama → ambil Datetime Receive terbaru
-    if (old.status === status && recvDate > old.recvDate) {
-        reconMap[wo] = newRow;
+        reconMap[wo] = newData;
+    } else {
+        const oldDate = reconMap[wo].__DATE_OBJ;
+        if (compareDateTime(currentDate, oldDate) > 0) {
+            reconMap[wo] = newData;
+        }
     }
 }
 
-// ================= RENDER =================
+// ================= RENDER TABLE =================
 function renderTable() {
     const tbody = document.querySelector("#resultTable tbody");
     tbody.innerHTML = "";
 
     reconData.forEach(row => {
         const tr = document.createElement("tr");
-        Object.values(row).forEach(v => {
+        Object.values(row).forEach(val => {
             const td = document.createElement("td");
-            td.textContent = v;
+            td.textContent = val;
             tr.appendChild(td);
         });
         tbody.appendChild(tr);
     });
 }
 
-// ================= EXPORT =================
+// ================= EXPORT EXCEL =================
 function exportExcel() {
-    if (!reconData.length) {
+    if (reconData.length === 0) {
         alert("Data masih kosong");
         return;
     }
 
-    const ws = XLSX.utils.json_to_sheet(reconData);
+    const ws = XLSX.utils.json_to_sheet(reconData, {
+        header: Object.keys(reconData[0])
+    });
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "RECONCILE");
     XLSX.writeFile(wb, "RECON_MEGA_AKSES.xlsx");
